@@ -11,11 +11,13 @@ diff = """diff --git a/src/main.py b/src/main.py
 index 3f8b2c4..1a2b3d5 100644
 --- a/main.py
 +++ b/main.py
-@@ -1,2 +1,2 @@
+@@ -1,2 +1,4 @@
 -def add(a,b):
 -    return a+b
 +def mul(a,b):
 +    return a*b
++def mul_by_2(a):
++    print(mul(a,2))
 """
 
 prompt = ChatPromptTemplate.from_template(
