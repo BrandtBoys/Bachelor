@@ -4,13 +4,13 @@ import git
 import os
 
 #create branch
-repo = git.Repo("../.")
+repo = git.Repo(".")
 branch_name = "Update-docs"
 repo.git.branch(branch_name)
 repo.git.checkout(branch_name)
 
 # fetch docs files
-docs_path = "docs/software_docs.md"
+docs_path = "mvp/docs/software_docs.md"
 with open(docs_path, "r") as f:
     current_docs = f.read()
 
