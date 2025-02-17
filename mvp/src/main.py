@@ -1,9 +1,6 @@
 def mul(a,b):
     return a*b
 
-def add(a,b):
-    return a+b
-
 def fac(a):
     res = 1
     while a < 0:

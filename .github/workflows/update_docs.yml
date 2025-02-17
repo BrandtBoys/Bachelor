@@ -44,7 +44,7 @@ jobs:
               run: python mvp/agent.py
 
             - name: Create pull request
-              run: gh pr create -B main -H Update-docs --title "Update docs pull request"
+              run: gh pr create -B main -H Update-docs --fill-first
               env:
                 GH_TOKEN: ${{ github.token }}
               
