@@ -47,14 +47,14 @@ with open(docs_path, "w") as f:
     f.write(llm_response.content)
 
 # Add changes
-add_files = ["./mvp/docs/software_docs.md"]
+add_files = ["./docs/software_docs.md"]
 repo.index.add(add_files)
 
 # Commit changes
 repo.index.commit("Updated docs files")
 
 # Push changes
-print(repo.remote)
+repo.remotes.origin.push()
 
 repo.__del__()
 exit(0)
