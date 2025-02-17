@@ -31,8 +31,8 @@ jobs:
             - name: Pull ollama model
               run: ollama pull llama3.2
 
-            - name: Run ollama
-              run: ollama serve
+            # - name: Run ollama
+            #   run: ollama serve
                     
             - name: Run agent
               run: python mvp/agent.py
