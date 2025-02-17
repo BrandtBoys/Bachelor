@@ -44,5 +44,5 @@ jobs:
               run: python mvp/agent.py
 
             - name: Create pull request
-              run: gh pr create -B main -H Update-docs --"Update docs pull request"
+              run: gh pr create -B main -H Update-docs --title "Update docs pull request"
               
