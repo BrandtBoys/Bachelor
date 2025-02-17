@@ -53,7 +53,8 @@ repo.index.add(add_files)
 # Commit changes
 repo.index.commit("Updated docs files")
 
-# 
+# Push changes
+print(repo.remote)
 
 repo.__del__()
 exit(0)
