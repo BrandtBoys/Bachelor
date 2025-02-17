@@ -24,7 +24,16 @@ jobs:
             
             - name: Install dependencies
               run: pip install -r mvp/requirements.txt #Install dependencies
-            
+
+            - name: Install ollama
+              run: curl -fsSL https://ollama.com/install.sh | sh
+
+            - name: Pull ollama model
+              run: ollama pull llama3.2
+
+            - name: Run ollama
+              run: ollama serve
+                    
             - name: Run agent
               run: python mvp/agent.py
 
