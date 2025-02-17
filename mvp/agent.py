@@ -55,6 +55,11 @@ repo.index.add(add_files)
 repo.index.commit("Updated docs files")
 
 # Push changes
+try:
+    repo.create_remote("origin", url="git@github.com:BrandtBoyz/Bachelor")
+except git.exe.GitCommandError as e:
+    print(f"error: {e}")
+
 repo.remotes.origin.push()
 
 repo.__del__()
