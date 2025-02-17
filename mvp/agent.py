@@ -1,32 +1,24 @@
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 import git
-import gc
-from difflib import Differ
-from pprint import pprint
 
+#create branch
+repo = git.Repo("../.")
+branch_name = "Update-docs"
+repo.git.branch(branch_name)
+repo.git.checkout(branch_name)
+
+# fetch docs files
 docs_path = "docs/software_docs.md"
 with open(docs_path, "r") as f:
     current_docs = f.read()
 
-# # repo = git.Repo(".")
-# diff = """diff --git a/src/main.py b/src/main.py
-# index 3f8b2c4..1a2b3d5 100644
-# --- a/main.py
-# +++ b/main.py
-# @@ -1,2 +1,4 @@
-# -def add(a,b):
-# -    return a+b
-# +def mul(a,b):
-# +    return a*b
-# +def mul_by_2(a):
-# +    print(mul(a,2))
-# """
-repo = git.Repo("../.")
+# Compare changes and create diff
 hcommit = repo.head.commit
 diff = repo.git.diff("HEAD~1","HEAD","mvp/src/")
 print(diff)
 
+# Create prompt for LLM
 prompt = ChatPromptTemplate.from_template(
     """
     You are a documentation assistant. A code change was just committed.
@@ -46,11 +38,22 @@ prompt_input = prompt.format(
     prev_docs = current_docs
 )
 
+# the LLM does it work
 llm = ChatOllama(model="llama3.2", temperature=0.1)
 llm_response = llm.invoke(prompt_input)
 
+# Write changes to docs
 with open(docs_path, "w") as f:
     f.write(llm_response.content)
+
+# Add changes
+add_files = ["/mvp/docs/software_docs.md"]
+repo.index.add(add_files)
+
+# Commit changes
+repo.index.commit("Updated docs files")
+
+# 
 
 repo.__del__()
 exit(0)
