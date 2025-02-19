@@ -1,37 +1,46 @@
-Here is the updated documentation:
-
 ## Code Change:
-    diff --git a/mvp/src/main.py b/mvp/src/main.py
-index 87118e3..0fa18dc 100644
---- a/mvp/src/main.py
-+++ b/mvp/src/main.py
-@@ -6,4 +6,7 @@ def fac(a):
-     while a < 0:
-         res*a
-         a = a -1
--    return res
+    diff --git a/mvp/src/program.py b/mvp/src/program.py
+index 742d68b..5512b9b 100644
+--- a/mvp/src/program.py
++++ b/mvp/src/program.py
+@@ -89,4 +89,6 @@ def main():
+             print_graph_coordinates(n, t, k)
+ 
+ if __name__ == '__main__':
+-    main()
 \ No newline at end of file
-+    return res
++    main()
 +
-+def sub(a,b):
-+    return a-b
++    # hello
 \ No newline at end of file
 
 ## Current Documentation:
     ## Updated Code Change:
 
-```diff --git a/mvp/src/main.py b/mvp/src/main.py
+```diff --git a/mvp/src/program.py b/mvp/src/program.py
 index 2c1b486..338a7a0 100644
---- a/mvp/src/main.py
-+++ b/mvp/src/main.py
-@@ -1,2 +1,3 @@
--# def mul(a,b):
--    #     return a*b
-+def add(a,b):
-+    #     return a+b
+--- a/mvp/src/program.py
++++ b/mvp/src/program.py
+@@ -89,4 +89,6 @@ def main():
+             print_graph_coordinates(n, t, k)
+ 
+ if __name__ == '__main__':
+-    main()
+\ No newline at end of file
++    main()
++
++    # hello
 ```
 
 ## Updated Documentation:
+
+### def main()
+
+This function serves as the entry point for the program. It calls the `print_graph_coordinates` function with three arguments: `n`, `t`, and `k`.
+
+### def print_graph_coordinates(n, t, k)
+
+Takes three inputs as arguments and prints their coordinates.
 
 ### def fac(a)
 
@@ -41,4 +50,4 @@ Takes one input as an argument and calculates its factorial. The function uses a
 
 Takes two inputs as arguments and returns their difference.
 
-Note: The documentation has been updated to reflect the change from addition to multiplication in the `add` function, which was previously missing.
+Note: The documentation has been updated to reflect the change in the `main` function, which now includes the call to `print_graph_coordinates`.
