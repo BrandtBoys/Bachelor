@@ -7,3 +7,6 @@ def fac(a):
         res*a
         a = a -1
     return res
+
+def sub(a,b):
+    return a-b
