@@ -3,7 +3,7 @@ def mul(a,b):
 
 def falc(a):
     res = 1
-    while a < 0:
+    while a > 0:
         res = mul(res,a)
         a = a -1
     return res
