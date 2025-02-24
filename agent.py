@@ -9,15 +9,18 @@ branch_name = "Update-docs"
 repo.git.branch(branch_name)
 repo.git.checkout(branch_name)
 
-# fetch docs files
-docs_path = "docs/software_docs.md"
-with open(docs_path, "r") as f:
-    current_docs = f.read()
-
 # Compare changes and create diff
 hcommit = repo.head.commit
+diff_files = hcommit.diff("HEAD~1").iter_change_type("M")
+for f in diff_files:
+    print(f)
 diff = repo.git.diff("HEAD~1","HEAD","src/")
 print(diff)
+
+# fetch source code
+path = str(diff_files[0])
+with open(path, "r") as f:
+    source_code = f.read()
 
 # Create prompt for LLM
 prompt = ChatPromptTemplate.from_template(
@@ -27,31 +30,32 @@ prompt = ChatPromptTemplate.from_template(
     ## Code Change:
     {code_diff}
 
-    ## Current Documentation:
-    {prev_docs}
+    ## Source file:
+    {source_code}
 
-    Update the documentation to reflect the code change.
+    Update the inline- documentation to reflect the code change. Do not change anything in the source file besides adding inline comments.
+    You should return the entire source-code now with your added inline documentation.
     """
 )
 
 prompt_input = prompt.format(
     code_diff = diff,
-    prev_docs = current_docs
+    source_code = source_code
 )
 
-# the LLM does it work
+# # the LLM does it work
 llm = ChatOllama(model="llama3.2", temperature=0.1)
 llm_response = llm.invoke(prompt_input)
 
-# Write changes to docs
-with open(docs_path, "w") as f:
+# # Write changes to docs
+with open(path, "w") as f:
     f.write(llm_response.content)
 
-# Add changes
-add_files = ["docs/software_docs.md"]
+# # Add changes
+add_files = [path]
 repo.index.add(add_files)
 
-# Commit changes
+# # Commit changes
 repo.index.commit("Updated docs files")
 
 # Push changes
