@@ -1,18 +1,18 @@
-def mul(a,b):
+def mult(a,b):
     return a*b
 
-def calc(a):
+def falc(a):
     res = 1
     while a < 0:
-        mul(res,a)
+        mult(res,a)
         a = a -1
     return res
 
-def sub(a,b):
+def subt(a,b):
     return a-b
 
-def enough_balance(balance, amount):
-    return sub(balance, amount) > 0
+def enough_balance_to_do_stuff(balance, amount):
+    return subt(balance, amount) > 0
 
-def not_enough_balance(balance, amount):
-    return not sub(balance, amount) > 0
+def not_enough_balance_to_do_stuff(balance, amount):
+    return not subt(balance, amount) > 0
