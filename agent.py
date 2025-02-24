@@ -15,8 +15,8 @@ repo.git.checkout(branch_name)
 hcommit = repo.head.commit
 diff = repo.git.diff("HEAD~1","HEAD","src/")
 # print(diff)
-diff_files = hcommit.diff("HEAD~1")
-source_path = str(diff_files[0])
+diff_files = list(hcommit.diff("HEAD~1"))
+source_path = str(diff_files[0].a_path)
 
 # fetch docs files
 with open(source_path, "r") as f:
