@@ -1,3 +1,4 @@
+from uuid import uuid4
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 import git
@@ -5,19 +6,21 @@ import os
 
 #create branch
 repo = git.Repo(".")
-branch_name = "Update-docs"
+branch_id = uuid4()
+branch_name = "Update-docs-" + str(branch_id)
 repo.git.branch(branch_name)
 repo.git.checkout(branch_name)
-
-# fetch docs files
-docs_path = "docs/software_docs.md"
-with open(docs_path, "r") as f:
-    current_docs = f.read()
 
 # Compare changes and create diff
 hcommit = repo.head.commit
 diff = repo.git.diff("HEAD~1","HEAD","src/")
-print(diff)
+# print(diff)
+diff_files = hcommit.diff("HEAD~1")
+source_path = str(diff_files[0])
+
+# fetch docs files
+with open(source_path, "r") as f:
+    source_code = f.read()
 
 # Create prompt for LLM
 prompt = ChatPromptTemplate.from_template(
@@ -27,16 +30,16 @@ prompt = ChatPromptTemplate.from_template(
     ## Code Change:
     {code_diff}
 
-    ## Current Documentation:
-    {prev_docs}
+    ## Previous source code:
+    {source_code}
 
-    Update the documentation to reflect the code change.
+    Update the inline-documentation to reflect the code change. The only way you shall change the source code is by adding inline documentation. You should return the entire source code with the inline documentation added.
     """
 )
 
 prompt_input = prompt.format(
     code_diff = diff,
-    prev_docs = current_docs
+    source_code = source_code
 )
 
 # the LLM does it work
@@ -44,15 +47,15 @@ llm = ChatOllama(model="llama3.2", temperature=0.1)
 llm_response = llm.invoke(prompt_input)
 
 # Write changes to docs
-with open(docs_path, "w") as f:
+with open(source_path, "w") as f:
     f.write(llm_response.content)
 
 # Add changes
-add_files = ["docs/software_docs.md"]
+add_files = [source_path]
 repo.index.add(add_files)
 
 # Commit changes
-repo.index.commit("Updated docs files")
+repo.index.commit("Updated inline documentation")
 
 # Push changes
 # try:
