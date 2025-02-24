@@ -13,3 +13,6 @@ def sub(a,b):
 
 def enough_balance(balance, amount):
     return sub(balance, amount) > 0
+
+def not_enough_balance(balance, amount):
+    return not sub(balance, amount) > 0
