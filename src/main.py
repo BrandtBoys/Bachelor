@@ -1,7 +1,7 @@
 def mul(a,b):
     return a*b
 
-def fac(a):
+def calc(a):
     res = 1
     while a < 0:
         mul(res,a)
@@ -10,3 +10,6 @@ def fac(a):
 
 def sub(a,b):
     return a-b
+
+def enough_balance(balance, amount):
+    return sub(balance, amount) > 0
