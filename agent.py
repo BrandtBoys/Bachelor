@@ -32,10 +32,12 @@ prompt = ChatPromptTemplate.from_template(
     You are a documentation assistant. A code change was just committed.
 
     ## Instructions:
-    - Only modify the provided `source_code` by adding inline comments at the end of lines that have been changed in `code_diff`.
-    - Do not modify any other lines of `source_code`.
-    - Do not add any headers, footers, explanations, or extra text.
-    - Return the fully formatted `source_code` with the new inline comments added to the changed lines.
+    - Only modify the provided `source_code` by adding inline comments to explain the functionality of the code.
+    - Focus on the lines changed in `code_diff`, but you may look a few lines above and below the changes to understand their context.
+    - Do **not** modify any code. Only add comments.
+    - The comments should explain **why** the code works the way it does, not just describe what was changed.
+    - Ensure the comments are clear, concise, and helpful.
+    - Do **not** add headers, footers, explanations, or any extra text. Only return the fully formatted `source_code` with comments added.
 
     ## Code Change:
     {code_diff}
@@ -43,7 +45,7 @@ prompt = ChatPromptTemplate.from_template(
     ## Previous Source Code:
     {source_code}
 
-    Return the updated source code with inline comments added only to the changed lines:
+    Return the updated source code with inline comments that explain the changed functionality:
     """
 )
 
