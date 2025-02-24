@@ -5,7 +5,7 @@ on:
         branches:
             - main
         paths:
-        - 'mvp/src/**'
+        - 'src/**'
 
 jobs:
     update-docs:
@@ -29,7 +29,7 @@ jobs:
                 cache: 'pip' # caching pip dependencies
             
             - name: Install dependencies
-              run: pip install -r mvp/requirements.txt #Install dependencies
+              run: pip install -r requirements.txt #Install dependencies
 
             - name: Install ollama
               run: curl -fsSL https://ollama.com/install.sh | sh
@@ -41,7 +41,7 @@ jobs:
             #   run: ollama serve
                     
             - name: Run agent
-              run: python mvp/agent.py
+              run: python agent.py
 
             - name: Create pull request
               run: gh pr create -B main -H Update-docs --fill-first

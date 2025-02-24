@@ -10,13 +10,13 @@ repo.git.branch(branch_name)
 repo.git.checkout(branch_name)
 
 # fetch docs files
-docs_path = "mvp/docs/software_docs.md"
+docs_path = "docs/software_docs.md"
 with open(docs_path, "r") as f:
     current_docs = f.read()
 
 # Compare changes and create diff
 hcommit = repo.head.commit
-diff = repo.git.diff("HEAD~1","HEAD","mvp/src/")
+diff = repo.git.diff("HEAD~1","HEAD","src/")
 print(diff)
 
 # Create prompt for LLM
@@ -48,7 +48,7 @@ with open(docs_path, "w") as f:
     f.write(llm_response.content)
 
 # Add changes
-add_files = ["mvp/docs/software_docs.md"]
+add_files = ["docs/software_docs.md"]
 repo.index.add(add_files)
 
 # Commit changes
