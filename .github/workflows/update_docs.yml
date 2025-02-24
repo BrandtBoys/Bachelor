@@ -44,7 +44,7 @@ jobs:
               run: python agent.py
 
             - name: Create pull request
-              run: gh pr create -B main -H Update-docs --fill-first
+              run: gh pr create -B main -H $BRANCH_NAME --fill-first
               env:
                 GH_TOKEN: ${{ github.token }}
               

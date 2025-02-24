@@ -11,6 +11,10 @@ branch_name = "Update-docs-" + str(branch_id)
 repo.git.branch(branch_name)
 repo.git.checkout(branch_name)
 
+# Set the branch name in the GitHub Actions environment
+with open(os.getenv('GITHUB_ENV'), "a") as env_file:
+    env_file.write(f"BRANCH_NAME={branch_name}\n")
+
 # Compare changes and create diff
 hcommit = repo.head.commit
 diff = repo.git.diff("HEAD~1","HEAD","src/")
