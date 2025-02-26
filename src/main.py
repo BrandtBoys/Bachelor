@@ -15,5 +15,5 @@ def enough_balance_to_do_stuff(balance, amount):
     return sub(balance, amount) > 0
 
 def not_enough_balance_to_do_stuff(balance, amount):
-    print(balance)
+    print(amount)
     return not sub(balance, amount) > 0
