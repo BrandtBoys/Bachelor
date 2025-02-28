@@ -2,7 +2,7 @@ def mul(a,b):
     # Multiplies two numbers and returns the result
     return a*b
  
-def calculate(a):
+def res(a):
     # Calculates the factorial of a number using multiplication
     res = 1
     while a > 0:
