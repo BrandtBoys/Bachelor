@@ -3,7 +3,7 @@ name: Update Documentation
 on:
     push:
         branches:
-            - main
+            - cache-ollama
         paths:
         - 'src/**'
 
