@@ -14,7 +14,7 @@ on:
 
     push:
         branches:
-            - main
+            - new-llm
         paths:
         - 'src/**'
 
