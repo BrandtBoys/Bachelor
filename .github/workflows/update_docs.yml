@@ -67,7 +67,7 @@ jobs:
                 echo "NEW_COMMIT=$NEW_COMMIT" >> $GITHUB_ENV
                     
             - name: Run agent
-              run: python agent.py "$CURRENT_COMMIT" "$NEW_COMMIT"
+              run: python -u agent.py "$CURRENT_COMMIT" "$NEW_COMMIT"
 
             - name: Create pull request
               run: gh pr create -B main -H $BRANCH_NAME --fill-first
