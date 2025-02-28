@@ -64,7 +64,7 @@ prompt_input = prompt.format(
 
 # the LLM does it work
 print("Initializing LLM")
-llm = ChatOllama(model="deepseek-r1:8b", temperature=0.1)
+llm = ChatOllama(model="deepseek-r1:7b", temperature=0.1)
 print("Invoking LLM")
 llm_response = llm.invoke(prompt_input)
 
