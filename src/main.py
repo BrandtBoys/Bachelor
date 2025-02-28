@@ -1,7 +1,7 @@
 def mul(a,b):
     return a*b
 
-def falcsoueihg(a):
+def falcsihg(a):
     res = 1
     while a > 0:
         res = mul(res,a)
