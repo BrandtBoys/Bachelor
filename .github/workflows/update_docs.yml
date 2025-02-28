@@ -31,8 +31,20 @@ jobs:
             - name: Install dependencies
               run: pip install -r requirements.txt #Install dependencies
 
-            - name: Install ollama
-              run: curl -fsSL https://ollama.com/install.sh | sh
+            - name: Cache Ollama Binary
+              uses: actions/cache@v3
+              with:
+                path: /usr/local/bin/ollama
+                key: ollama-binary-${{ runner.os }}-v1
+
+            - name: Install Ollama if Missing
+              run: |
+                if ! command -v ollama &> /dev/null; then
+                  echo "Ollama binary not found, installing..."
+                  curl -fsSL https://ollama.com/install.sh | sh
+                else
+                  echo "Ollama binary found, skipping install."
+                fi
 
             - name: Pull ollama model
               run: ollama pull llama3.2
