@@ -60,7 +60,7 @@ prompt_input = prompt.format(
 )
 
 # the LLM does it work
-llm = ChatOllama(model="llama3.2", temperature=0.1)
+llm = ChatOllama(model="deepseek-r1:14b", temperature=0.1)
 llm_response = llm.invoke(prompt_input)
 
 # Write changes to docs
