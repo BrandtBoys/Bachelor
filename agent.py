@@ -28,6 +28,7 @@ diff_files = list(hcommit.diff("HEAD~1"))
 source_path = str(diff_files[0].a_path)
 
 # fetch docs files
+print("Reading files")
 with open(source_path, "r") as f:
     source_code = f.read()
 
@@ -60,10 +61,13 @@ prompt_input = prompt.format(
 )
 
 # the LLM does it work
-llm = ChatOllama(model="deepseek-r1:14b", temperature=0.1)
+print("Initializing LLM")
+llm = ChatOllama(model="deepseek-r1:8b", temperature=0.1)
+print("Invoking LLM")
 llm_response = llm.invoke(prompt_input)
 
 # Write changes to docs
+print("Writing changes to file")
 with open(source_path, "w") as f:
     f.write(llm_response.content)
 
