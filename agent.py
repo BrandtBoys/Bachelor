@@ -6,10 +6,12 @@ import git
 import os
 
 # Get arguments or set defaults
+print("before new stuff")
 current_commit = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else "HEAD~1"
 new_commit = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else "HEAD"
 
 #create branch
+print("after new stuff")
 repo = git.Repo(".")
 branch_id = uuid4()
 branch_name = "Update-docs-" + str(branch_id)
