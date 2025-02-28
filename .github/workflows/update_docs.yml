@@ -1,6 +1,17 @@
 name: Update Documentation
 
 on:
+    workflow_dispatch:
+          inputs:
+              currentCommit:
+                  description: "Commit hash to compare from (default: HEAD~1)"
+                  required: false
+                  default: ""
+              newCommit:
+                  description: "Commit hash to compare to (default: HEAD)"
+                  required: false
+                  default: ""
+
     push:
         branches:
             - main
@@ -14,7 +25,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
               with:
-                fetch-depth: 0
+                fetch-depth: 2
             
             - name: Configure Git for GitHub Actions
               run: |
@@ -37,11 +48,26 @@ jobs:
             - name: Pull ollama model
               run: ollama pull llama3.2
 
-            # - name: Run ollama
-            #   run: ollama serve
+            - name: Determine Commits #if the inputs are empty use HEAD~1 and HEAD
+              id: commits
+              run: |
+                CURRENT_COMMIT="${{ github.event.inputs.currentCommit }}"
+                NEW_COMMIT="${{ github.event.inputs.newCommit }}"
+
+                if [[ -z "$CURRENT_COMMIT" ]]; then 
+                  CURRENT_COMMIT=$(git rev-parse HEAD~1)
+                fi
+
+                if [[ -z "$NEW_COMMIT" ]]; then
+                  NEW_COMMIT=$(git rev-parse HEAD)
+                fi
+
+                echo "Using commits: $CURRENT_COMMIT -> $NEW_COMMIT"
+                echo "CURRENT_COMMIT=$CURRENT_COMMIT" >> $GITHUB_ENV
+                echo "NEW_COMMIT=$NEW_COMMIT" >> $GITHUB_ENV
                     
             - name: Run agent
-              run: python agent.py
+              run: python agent.py "$CURRENT_COMMIT" "$NEW_COMMIT"
 
             - name: Create pull request
               run: gh pr create -B main -H $BRANCH_NAME --fill-first

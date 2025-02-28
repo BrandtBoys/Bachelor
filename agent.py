@@ -1,8 +1,13 @@
+import sys
 from uuid import uuid4
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 import git
 import os
+
+# Get arguments or set defaults
+current_commit = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else "HEAD~1"
+new_commit = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else "HEAD"
 
 #create branch
 repo = git.Repo(".")
@@ -17,7 +22,7 @@ with open(os.getenv('GITHUB_ENV'), "a") as env_file:
 
 # Compare changes and create diff
 hcommit = repo.head.commit
-diff = repo.git.diff("HEAD~1","HEAD","src/")
+diff = repo.git.diff(current_commit, new_commit,"src/")
 # print(diff)
 diff_files = list(hcommit.diff("HEAD~1"))
 source_path = str(diff_files[0].a_path)
