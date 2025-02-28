@@ -4,10 +4,14 @@ on:
     workflow_dispatch:
           inputs:
               currentCommit:
-                  description: "Commit hash to compare from (default: HEAD~1)"
+                  description: "Commit to compare from"
                   required: false
-                  default: ""
+                  default: "HEAD~1"
               newCommit:
+                  description: "Commit to compare to"
+                  required: false
+                  default: "HEAD"
+              branch_name:
                   description: "Commit hash to compare to (default: HEAD)"
                   required: false
                   default: ""
@@ -25,7 +29,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v3
               with:
-                fetch-depth: 2
+                fetch-depth: 0
             
             - name: Configure Git for GitHub Actions
               run: |
@@ -53,23 +57,25 @@ jobs:
               run: |
                 CURRENT_COMMIT="${{ github.event.inputs.currentCommit }}"
                 NEW_COMMIT="${{ github.event.inputs.newCommit }}"
+                BRANCH_NAME="${{ github.event.inputs.branch_name }}"
 
-                if [[ -z "$CURRENT_COMMIT" ]]; then 
-                  CURRENT_COMMIT=$(git rev-parse HEAD~1)
-                fi
-
-                if [[ -z "$NEW_COMMIT" ]]; then
-                  NEW_COMMIT=$(git rev-parse HEAD)
-                fi
-
-                echo "Using commits: $CURRENT_COMMIT -> $NEW_COMMIT"
+                echo "Using commits: $CURRENT_COMMIT -> $NEW_COMMIT, on branch $BRANCH_NAME"
                 echo "CURRENT_COMMIT=$CURRENT_COMMIT" >> $GITHUB_ENV
                 echo "NEW_COMMIT=$NEW_COMMIT" >> $GITHUB_ENV
+                echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
                     
             - name: Run agent
-              run: python agent.py "$CURRENT_COMMIT" "$NEW_COMMIT"
+              run: python agent.py "$CURRENT_COMMIT" "$NEW_COMMIT" "$BRANCH_NAME"
 
-            - name: Create pull request
+            - name: Commit and Push Changes (test-mode, if not on the main-branch)
+              if: github.ref != 'refs/heads/main'
+              run: |
+                git add .
+                git commit -m "Auto-update documentation"
+                git push origin HEAD
+
+            - name: Create pull request (only if running on main)
+              if: github.ref == 'refs/heads/main'
               run: gh pr create -B main -H $BRANCH_NAME --fill-first
               env:
                 GH_TOKEN: ${{ github.token }}
