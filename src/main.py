@@ -1,7 +1,7 @@
 def mul(a,b):
     return a*b
 
-def calc(a):
+def calculate(a):
     res = 1
     while a > 0:
         res = mul(res,a)
