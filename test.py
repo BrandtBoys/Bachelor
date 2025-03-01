@@ -45,7 +45,7 @@ payload = {
 # Headers for authentication
 headers = {
     "Accept": "application/vnd.github.v3+json",
-    "Authorization": f"Bearer {GITHUB_TOKEN}"
+    "Authorization": f"token {GITHUB_TOKEN}"
 }
 
 # Trigger the workflow
