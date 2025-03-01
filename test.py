@@ -7,7 +7,7 @@ import uuid
 GITHUB_OWNER = "Brandtboys"  # Change this
 REPO_NAME = "Bachelor"  # Change this
 WORKFLOW_NAME = "update-docs.yml"  # Change if different
-GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
+GITHUB_TOKEN = os.getenv("$GITHUB_PAT")  # Use a Personal Access Token
 
 # Commits to compare (replace or allow user input)
 current_commit = "dbf0743"  # Example commit hash or HEAD~1
