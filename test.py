@@ -43,6 +43,7 @@ payload = {
 }
 
 # Headers for authentication
+print(GITHUB_TOKEN)
 headers = {
     "Accept": "application/vnd.github.v3+json",
     "Authorization": f"token {GITHUB_TOKEN}"
