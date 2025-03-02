@@ -10,7 +10,7 @@ load_dotenv()
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
 REPO_NAME = "Bachelor"  # Change this
-WORKFLOW_NAME = "update-docs.yml"  # Change if different
+WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
 # Commits to compare (replace or allow user input)
@@ -41,20 +41,20 @@ try:
     # url = f"https://api.github.com/repos/{GITHUB_OWNER}/{REPO_NAME}/actions/workflows/{WORKFLOW_NAME}/dispatches"
 
     # API request payload
-    payload = {
-        "ref": branch_name,  # Run workflow on this new branch
-        "inputs": {
-            "currentCommit": "HEAD",
-            "newCommit": new_commit,
-            "branch_name": branch_name
-        }
-    }
+    # payload = {
+    #     "ref": branch_name,  # Run workflow on this new branch
+    #     "inputs": {
+    #         "currentCommit": "HEAD",
+    #         "newCommit": new_commit,
+    #         "branch_name": branch_name
+    #     }
+    # }
 
-    # Headers for authentication
-    headers = {
-        "Accept": "application/vnd.github.v3+json",
-        "Authorization": f"Bearer {GITHUB_TOKEN}"
-    }
+    # # Headers for authentication
+    # headers = {
+    #     "Accept": "application/vnd.github.v3+json",
+    #     "Authorization": f"Bearer {GITHUB_TOKEN}"
+    # }
 
     # Trigger the workflow
     workflow.create_dispatch(ref=branch_name)
