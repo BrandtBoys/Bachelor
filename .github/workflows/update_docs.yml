@@ -2,19 +2,6 @@ name: Update Documentation
 
 on:
     workflow_dispatch:
-          inputs:
-              currentCommit:
-                  description: "Commit to compare from"
-                  required: false
-                  default: "HEAD~1"
-              newCommit:
-                  description: "Commit to compare to"
-                  required: false
-                  default: "HEAD"
-              branch_name:
-                  description: "Commit hash to compare to (default: HEAD)"
-                  required: false
-                  default: ""
 
     push:
         branches:
@@ -51,28 +38,16 @@ jobs:
 
             - name: Pull ollama model
               run: ollama pull llama3.2
-
-            - name: Determine Commits #if the inputs are empty use HEAD~1 and HEAD
-              id: commits
-              run: |
-                CURRENT_COMMIT="${{ github.event.inputs.currentCommit }}"
-                NEW_COMMIT="${{ github.event.inputs.newCommit }}"
-                BRANCH_NAME="${{ github.event.inputs.branch_name }}"
-
-                echo "Using commits: $CURRENT_COMMIT -> $NEW_COMMIT, on branch $BRANCH_NAME"
-                echo "CURRENT_COMMIT=$CURRENT_COMMIT" >> $GITHUB_ENV
-                echo "NEW_COMMIT=$NEW_COMMIT" >> $GITHUB_ENV
-                echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
                     
             - name: Run agent
-              run: python agent.py "$CURRENT_COMMIT" "$NEW_COMMIT" "$BRANCH_NAME"
+              run: python agent.py
 
-            - name: Commit and Push Changes (test-mode, if not on the main-branch)
+            - name: Merge pull request from agent (test-mode, if not on the main-branch)
               if: github.ref != 'refs/heads/main'
               run: |
-                git add .
-                git commit -m "Auto-update documentation"
+                git merge $BRANCH_NAME
                 git push origin HEAD
+                git push origin --delete $BRANCH_NAME
 
             - name: Create pull request (only if running on main)
               if: github.ref == 'refs/heads/main'

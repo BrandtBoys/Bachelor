@@ -5,20 +5,14 @@ from langchain_core.prompts import ChatPromptTemplate
 import git
 import os
 
-# Get arguments or set defaults, to accommodate test environment
-current_commit = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else "HEAD~1"
-new_commit = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else "HEAD"
-branch_name = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else ""
 
-#create branch
 repo = git.Repo(".")
 
 #to accommodate test-environment: the test script manages branch name and creation
-if branch_name != "":
-    branch_id = uuid4()
-    branch_name = "Update-docs-" + str(branch_id)
-    repo.git.branch(branch_name)
-    repo.git.checkout(branch_name)
+branch_id = uuid4()
+branch_name = "Update-docs-" + str(branch_id)
+repo.git.branch(branch_name)
+repo.git.checkout(branch_name)
 
 # Set the branch name in the GitHub Actions environment
 with open(os.getenv('GITHUB_ENV'), "a") as env_file:
@@ -26,7 +20,7 @@ with open(os.getenv('GITHUB_ENV'), "a") as env_file:
 
 # Compare changes and create diff
 hcommit = repo.head.commit
-diff = repo.git.diff(current_commit, new_commit,"src/")
+diff = repo.git.diff("HEAD~1", "HEAD","src/")
 # print(diff)
 diff_files = list(hcommit.diff("HEAD~1"))
 source_path = str(diff_files[0].a_path)
