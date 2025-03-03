@@ -125,3 +125,6 @@ for file in diff.files:
             )
         else:
             raise  # Raise other unexpected errors
+
+workflow = repo.get_workflow(WORKFLOW_NAME)
+workflow.create_dispatch(ref=branch_name)

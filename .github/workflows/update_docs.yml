@@ -45,10 +45,13 @@ jobs:
             - name: Merge pull request from agent (test-mode, if not on the main-branch)
               if: github.ref != 'refs/heads/main'
               run: |
-                git merge $BRANCH_NAME
+                echo "Current branch: ${GITHUB_REF}"
+                git fetch origin $BRANCH_NAME
+                git pull origin $BRANCH_NAME
+                git merge origin/$BRANCH_NAME
+                git status
                 git push origin HEAD
-                git push origin --delete $BRANCH_NAME
-
+                
             - name: Create pull request (only if running on main)
               if: github.ref == 'refs/heads/main'
               run: gh pr create -B main -H $BRANCH_NAME --fill-first
