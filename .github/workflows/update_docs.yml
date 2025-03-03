@@ -1,6 +1,8 @@
 name: Update Documentation
 
 on:
+    workflow_dispatch:
+
     push:
         branches:
             - main
@@ -36,14 +38,19 @@ jobs:
 
             - name: Pull ollama model
               run: ollama pull llama3.2
-
-            # - name: Run ollama
-            #   run: ollama serve
                     
             - name: Run agent
               run: python agent.py
 
-            - name: Create pull request
+            - name: Merge pull request from agent (test-mode, if not on the main-branch)
+              if: github.ref != 'refs/heads/main'
+              run: |
+                git merge $BRANCH_NAME
+                git push origin HEAD
+                git push origin --delete $BRANCH_NAME
+
+            - name: Create pull request (only if running on main)
+              if: github.ref == 'refs/heads/main'
               run: gh pr create -B main -H $BRANCH_NAME --fill-first
               env:
                 GH_TOKEN: ${{ github.token }}
