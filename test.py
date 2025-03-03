@@ -16,8 +16,8 @@ WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
 # Commits to compare (replace or allow user input)
-start_commit = "dbf0743"  # Example commit hash or HEAD~1
-new_commits = "cececd9"  # One or more new commits
+start_commit = "e5ae77d"  # Example commit hash or HEAD~1
+new_commits = "baa26c6"  # One or more new commits
 
 # Generate a unique branch name
 branch_name = f"test-agent-{uuid.uuid4()}"
