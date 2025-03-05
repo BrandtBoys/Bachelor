@@ -53,6 +53,7 @@ jobs:
               run: |
                 git fetch origin $BRANCH_NAME
                 git merge origin/$BRANCH_NAME
+                git push -d origin $BRANCH_NAME
                 git push origin HEAD
                 
             - name: Create pull request (only if running on main)
