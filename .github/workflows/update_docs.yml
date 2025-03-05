@@ -45,7 +45,7 @@ jobs:
             - name: Merge pull request from agent (test-mode, if not on the main-branch)
               if: github.ref != 'refs/heads/main'
               run: |
-                echo "Current branch: ${GITHUB_REF}"
+                echo "Current branch: ${HEAD}"
                 git fetch origin $BRANCH_NAME
                 git pull origin $BRANCH_NAME
                 git merge origin/$BRANCH_NAME
