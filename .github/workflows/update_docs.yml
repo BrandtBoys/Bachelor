@@ -41,11 +41,17 @@ jobs:
                     
             - name: Run agent
               run: python agent.py
+            
+            - name: checkout to test-branch
+              if: github.ref != 'refs/heads/main'
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.ref }}
 
             - name: Merge pull request from agent (test-mode, if not on the main-branch)
               if: github.ref != 'refs/heads/main'
               run: |
-                echo "Current branch: ${HEAD}"
+                echo "Current branch: ${{ github.ref_name }}"
                 git fetch origin $BRANCH_NAME
                 git pull origin $BRANCH_NAME
                 git merge origin/$BRANCH_NAME
