@@ -1,11 +1,10 @@
 from dotenv import load_dotenv
-import requests
 import os
-import subprocess
 import uuid
 import github
 import detect_language
 import remove_comments
+import time
 
 load_dotenv()
 
@@ -14,10 +13,6 @@ GITHUB_OWNER = "BrandtBoys"  # Change this
 REPO_NAME = "Bachelor"  # Change this
 WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
-
-# Commits to compare (replace or allow user input)
-start_commit = "e5ae77d"  # Example commit hash or HEAD~1
-new_commits = "baa26c6"  # One or more new commits
 
 # Generate a unique branch name
 branch_name = f"test-agent-{uuid.uuid4()}"
@@ -28,88 +23,65 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 #get repo
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
+# Commits to compare (replace or allow user input)
+start = 2  # what index of commit the test should start from
+end = 0  # what index of commit the test should end at
+
+commits = list(repo.get_commits(sha="main")) #the list of all commits from a given branch, where index 0 is HEAD
 
 #Branch out to test env, from the specified commit you want to start the test from
-repo.create_git_ref(ref='refs/heads/' + branch_name, sha=repo.get_commit(start_commit).sha)
+repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
+branch = repo.get_branch(branch_name)
 
-#read the content of the agent
-with open ("agent.py", "r") as f:
-    agent_code = f.read()
+def main():
 
-#read content of the workflow
-with open (".github/workflows/update_docs.yml","r") as f:
-    workflow_code = f.read()
+    #read the content of the agent, and add it into the test environment
+    with open ("agent.py", "r") as f:
+        agent_code = f.read()
+        update_file("agent.py", agent_code)
+
+    #read content of the workflow, and add it into the test environment
+    with open (".github/workflows/update_docs.yml","r") as f:
+        workflow_code = f.read()
+        update_file(".github/workflows/update_docs.yml",workflow_code)
     
-#add the content of the agent to the test branch
-try:
-    # Check if file exists in the branch
-    contents = repo.get_contents("agent.py", ref=branch_name)
+
+    #add loop of commits
+    for commit in reversed(commits[start:end-1:-1]):
+        add_commit_run_agent(commit.sha)
     
-    # If file exists, update it
-    repo.update_file(
-        path="agent.py",
-        message="Updated agent.py in the test environment",
-        content=agent_code,
-        sha=contents.sha,  # Required for updating an existing file
-        branch=branch_name
-    )
 
-except Exception as e:
-    # If file doesn't exist, create it
-    if "404" in str(e):  # File not found error
-        repo.create_file(
-            path="agent.py",
-            message="Added agent.py to the test environment",
-            content=agent_code,
-            branch=branch_name
-        )
-    else:
-        raise  # Raise other unexpected errors
+def add_commit_run_agent(commit_sha):
+    #add new commits to the test branch.
+    head_commit = branch.commit.sha #The HEAD of test branch
+    diff = repo.compare(head_commit,commit_sha) #code diff between the HEAD commit and the next commit
 
-#add the content of the workflow to the test environment
-try:
-    # Check if file exists in the branch
-    contents = repo.get_contents(".github/workflows/update_docs.yml", ref=branch_name)
-    
-    # If file exists, update it
-    repo.update_file(
-        path=".github/workflows/update_docs.yml",
-        message="Updated workflow in the test environment",
-        content=workflow_code,
-        sha=contents.sha,  # Required for updating an existing file
-        branch=branch_name
-    )
+    for file in diff.files:
+        file_language = detect_language.detect_language(file.filename)
+        content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
+        cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
+        update_file(file.filename, cleaned_source)
 
-except Exception as e:
-    # If file doesn't exist, create it
-    if "404" in str(e):  # File not found error
-        repo.create_file(
-            path=".github/workflows/update_docs.yml",
-            message="Added workflow to the test environment",
-            content=workflow_code,
-            branch=branch_name
-        )
-    else:
-        raise  # Raise other unexpected errors
+    workflow = repo.get_workflow(WORKFLOW_NAME)
+    workflow.create_dispatch(ref=branch_name)
 
-#add loop ofg commits
+    # wait to see when the action is finished, before moving on.
+    run = workflow.get_runs()[0]
+    while run.status not in ["completed"]:
+        print(f"Workflow running... (current status: {run.status})")
+        time.sleep(5)  # Wait and check again
+        run = workflow.get_runs()[0]  # Refresh latest run
 
-#add new commits to the test branch.
-diff = repo.compare(start_commit,new_commits)
-
-for file in diff.files:
-    file_language = detect_language.detect_language(file.filename)
-    content = repo.get_contents(file.filename,ref=repo.get_commit(new_commits).sha).decoded_content
-    cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
+def update_file(file_name, content):
     try:
         # Check if file exists in the branch
-        contents = repo.get_contents(file.filename, ref=branch_name)
+        contents = repo.get_contents(file_name, ref=branch_name)
         
         # If file exists, update it
         repo.update_file(
-            path=file.filename,
-            message="Updated {file_path} in the test environment",
-            content=cleaned_source,
+            path=file_name,
+            message="Updated ${file_name} in the test environment",
+            content=content,
             sha=contents.sha,  # Required for updating an existing file
             branch=branch_name
         )
@@ -118,13 +90,13 @@ for file in diff.files:
         # If file doesn't exist, create it
         if "404" in str(e):  # File not found error
             repo.create_file(
-                path=file.filename,
-                message="Added {file_path} to the test environment",
-                content=cleaned_source,
+                path=file_name,
+                message="Added ${file_name} to the test environment",
+                content=content,
                 branch=branch_name
             )
         else:
             raise  # Raise other unexpected errors
 
-workflow = repo.get_workflow(WORKFLOW_NAME)
-workflow.create_dispatch(ref=branch_name)
+if __name__ == "__main__":
+    main()
