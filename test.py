@@ -45,9 +45,10 @@ def main():
         workflow_code = f.read()
         update_file(".github/workflows/update_docs.yml",workflow_code)
     
-
+    print("hello")
     #add loop of commits
-    for commit in reversed(commits[start:end-1:-1]):
+    for commit in reversed(commits[end:start+1]):
+        print(commit)
         add_commit_run_agent(commit.sha)
     
 
