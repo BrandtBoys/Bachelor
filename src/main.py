@@ -13,7 +13,6 @@ def calculate(a):
     return res
 
 def sub(a,b):
-    
   # This function subtracts two numbers, but it's not clear why 
   # this subtraction operation is necessary. It seems to be 
   # printing "Test print" and returning the difference between 
@@ -36,7 +35,6 @@ def not_enough_balance_to_do_stuff(balance, amount):
     return not sub(balance, amount) > 0
 
 def buyPizza(price, balance):
-    
   # This function buys a pizza with the given price and balance.
   # The subtraction operation is performed to update the balance. 
   # A dictionary representing the pizza is created and returned.
@@ -50,7 +48,6 @@ def buyPizza(price, balance):
     enough = not_enough_balance(new_balance, price)
     if enough:
         return pizza
-    else return None
-
-
-
+    else:
+        # If there's not enough balance, return None to indicate failure.
+        return None
