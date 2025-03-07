@@ -27,7 +27,7 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
-start = 3  # what index of commit the test should start from
+start = 2  # what index of commit the test should start from
 end = 0  # what index of commit the test should end at
 
 #the list of all commits from a given branch, where index 0 is HEAD
@@ -106,16 +106,16 @@ def add_commit_run_agent(commit_sha):
         modified_files.append((file.filename, modified_file_str))
 
     commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments.")
-    # workflow = repo.get_workflow(WORKFLOW_NAME)
-    # workflow.create_dispatch(ref=branch_name)
+    workflow = repo.get_workflow(WORKFLOW_NAME)
+    workflow.create_dispatch(ref=branch_name)
     time.sleep(5)
 
     # wait to see when the action is finished, before moving on.
-    # run = workflow.get_runs()[0]
-    # while run.status not in ["completed"]:
-    #     print(f"Workflow running... (current status: {run.status})")
-    #     time.sleep(5)  # Wait and check again
-    #     run = workflow.get_runs()[0]  # Refresh latest run
+    run = workflow.get_runs()[0]
+    while run.status not in ["completed"]:
+        print(f"Workflow running... (current status: {run.status})")
+        time.sleep(5)  # Wait and check again
+        run = workflow.get_runs()[0]  # Refresh latest run
 
 
 def commit_multiple_files(ref, files, last_commit, commit_message):
