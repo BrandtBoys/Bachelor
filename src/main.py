@@ -66,7 +66,7 @@
 
 +     
 
-+     balance = balance - price
++     new_balance = sub(balance, price)
 
 +     pizza = {
 
@@ -78,7 +78,15 @@
 
 +     }
 
-+     return pizza
++     
+
++     enough = not_enough_balance(new_balance, price)
+
++     if enough:
+
++         return pizza
+
++     else return None
 
 + 
 
