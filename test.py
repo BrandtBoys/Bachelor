@@ -27,7 +27,8 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 start = 2  # what index of commit the test should start from
 end = 0  # what index of commit the test should end at
 
-commits = list(repo.get_commits(sha="main")) #the list of all commits from a given branch, where index 0 is HEAD
+#the list of all commits from a given branch, where index 0 is HEAD
+commits = list(repo.get_commits(sha="main")) 
 
 #Branch out to test env, from the specified commit you want to start the test from
 repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
@@ -45,7 +46,6 @@ def main():
         workflow_code = f.read()
         update_file(".github/workflows/update_docs.yml",workflow_code)
     
-    print("hello")
     #add loop of commits
     for commit in reversed(commits[end:start+1]):
         print(commit)
@@ -53,13 +53,18 @@ def main():
     
 
 def add_commit_run_agent(commit_sha):
-    #add new commits to the test branch.
-    head_commit = branch.commit.sha #The HEAD of test branch
-    diff = repo.compare(head_commit,commit_sha) #code diff between the HEAD commit and the next commit
+
+    #Get the HEAD commit of test branch
+    head_commit = branch.commit.sha 
+    #code diff between the HEAD commit and the next commit
+    diff = repo.compare(head_commit,commit_sha) 
 
     for file in diff.files:
-        file_language = detect_language.detect_language(file.filename)
-        content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
+        #use helper script to detect which language the modified file is written in
+        file_language = detect_language.detect_language(file.filename) 
+        #Get the version of the modified file from the new commit
+        content = repo.get_contents(file.filename,ref=commit_sha).decoded_content 
+        #use helper script to remove all comments from the modified file
         cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
         update_file(file.filename, cleaned_source)
 
