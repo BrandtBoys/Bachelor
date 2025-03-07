@@ -1,38 +1,50 @@
-  def mul(a,b):
-      return a*b
-  
-  def calculate(a):
-      res = 1
--     while a > 0: #Test comment
-+     while a > 0: 
-          res = mul(res,a)
-          a = a -1
-      return res
-  
-  def sub(a,b):
--     #Comment
-+     
-      print("Test print")
-      return a-b
-  
-  def enough_balance_to_do_stuff(balance, amount):
--     return sub(balance, amount) > 0 #Test comment
-?                                     -------------
-+     return sub(balance, amount) > 0 
-  
-  def not_enough_balance_to_do_stuff(balance, amount):
-      print(amount)
-      return not sub(balance, amount) > 0
-  
-+ def buyPizza(price, balance):
-+     
-+     balance = balance - price
-+     pizza = {
-+         "price": price,
-+         "type": "pepperoni",
-+         "size": "huge"
-+     }
-+     return pizza
-  
-  
-+ 
+def mul(a,b):
+    # This function multiplies two numbers and returns the result
+    return a*b
+
+def calculate(a):
+    # Initialize a variable to store the result, starting at 1
+    res = 1
+    
+    # Loop as long as 'a' is greater than 0
+    while a > 0: 
+        # Multiply the current result by 'a'
+        res = mul(res,a)
+        
+        # Subtract 1 from 'a' for each iteration
+        a = a -1
+        
+    # Return the final result
+    return res
+
+def sub(a,b):
+    # This function subtracts two numbers and returns the difference
+    print("Test print")
+    
+    # Return the subtraction of 'b' from 'a'
+    return a-b
+
+def enough_balance_to_do_stuff(balance, amount):
+    # Check if there is sufficient balance to do something
+    return sub(balance, amount) > 0 
+
+def not_enough_balance_to_do_stuff(balance, amount):
+    print(amount)
+    
+    # Return True if there isn't enough balance, False otherwise
+    return not sub(balance, amount) > 0
+
+# This function simulates buying a pizza with the given price and balance
+def buyPizza(price, balance):
+    # Subtract the price from the balance
+    balance = balance - price
+    
+    # Create a dictionary to store information about the pizza
+    pizza = {
+        "price": price,
+        "type": "pepperoni",
+        "size": "huge"
+    }
+    
+    # Return the pizza details
+    return pizza
