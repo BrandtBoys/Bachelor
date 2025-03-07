@@ -27,7 +27,7 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
-start = 2  # what index of commit the test should start from
+start = 3  # what index of commit the test should start from
 end = 0  # what index of commit the test should end at
 
 #the list of all commits from a given branch, where index 0 is HEAD
@@ -76,7 +76,16 @@ def add_commit_run_agent(commit_sha):
         #use helper script to remove all comments from the modified file
         cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
         #get the content of the file from the current HEAD commit
-        head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
+        try:
+            # Try to fetch the file from the current HEAD (test branch)
+            head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
+        except github.GithubException as e:
+            if e.status == 404:
+                print(f"File {file.filename} does not exist in {head_commit_sha} - treating as newly added file.")
+                head_content = ""
+            else:
+                print(e.message)
+
         #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
         #would remove, since the new commit holds no comments.
         differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
