@@ -32,7 +32,8 @@ def buyPizza(price, balance):
     enough = not_enough_balance(new_balance, price)
     if enough:
         return pizza
-    else return None
+    else:
+        return None
 
 
 
