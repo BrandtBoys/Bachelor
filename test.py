@@ -7,6 +7,7 @@ import detect_language
 import remove_comments
 import time
 import difflib
+from github.InputGitTreeElement import InputGitTreeElement
 
 load_dotenv()
 
@@ -56,11 +57,16 @@ def main():
 
 def add_commit_run_agent(commit_sha):
     branch = repo.get_branch(branch_name)
+    ref = repo.get_git_ref(f'heads/{branch_name}')
     #Get the HEAD commit of test branch
-    head_commit = branch.commit.sha 
-    print(head_commit)
+    head_commit_sha = branch.commit.sha 
+    print(head_commit_sha)
+    head_commit = repo.get_git_commit(head_commit_sha)
     #code diff between the HEAD commit and the next commit
-    diff = repo.compare(head_commit,commit_sha) 
+    diff = repo.compare(head_commit_sha,commit_sha) 
+
+
+    modified_files = []
 
     for file in diff.files:
         #use helper script to detect which language the modified file is written in
@@ -70,7 +76,7 @@ def add_commit_run_agent(commit_sha):
         #use helper script to remove all comments from the modified file
         cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
         #get the content of the file from the current HEAD commit
-        head_content = repo.get_contents(file.filename,ref=head_commit).decoded_content.decode("utf-8")
+        head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
         #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
         #would remove, since the new commit holds no comments.
         differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
@@ -87,20 +93,41 @@ def add_commit_run_agent(commit_sha):
         modified_file = difflib.restore(modified_differ, 2)
         modified_file_str = "".join(modified_file)
         
-        #commit the modified file to the branch
-        update_file(file.filename,modified_file_str)
+        #add modified files to list
+        modified_files.append((file.filename, modified_file_str))
 
-
-    workflow = repo.get_workflow(WORKFLOW_NAME)
-    workflow.create_dispatch(ref=branch_name)
+    commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments.")
+    # workflow = repo.get_workflow(WORKFLOW_NAME)
+    # workflow.create_dispatch(ref=branch_name)
     time.sleep(5)
 
     # wait to see when the action is finished, before moving on.
-    run = workflow.get_runs()[0]
-    while run.status not in ["completed"]:
-        print(f"Workflow running... (current status: {run.status})")
-        time.sleep(5)  # Wait and check again
-        run = workflow.get_runs()[0]  # Refresh latest run
+    # run = workflow.get_runs()[0]
+    # while run.status not in ["completed"]:
+    #     print(f"Workflow running... (current status: {run.status})")
+    #     time.sleep(5)  # Wait and check again
+    #     run = workflow.get_runs()[0]  # Refresh latest run
+
+
+def commit_multiple_files(ref, files, last_commit, commit_message):
+    # Create blobs for each file (this uploads the content to GitHub)
+    blobs = []
+    for path, content in files:
+        blob = repo.create_git_blob(content, "utf-8")
+        blobs.append((path, blob))
+
+    # Create a tree that includes all files
+    tree_elements = []
+    for path, blob in blobs:
+        tree_element = InputGitTreeElement(path=path, mode="100644", type="blob", sha=blob.sha)
+        tree_elements.append(tree_element)
+
+    new_tree = repo.create_git_tree(tree_elements, last_commit.tree)
+
+    new_commit = repo.create_git_commit(commit_message, new_tree, [last_commit])
+
+    #Move the branch pointer to the new commit
+    ref.edit(new_commit.sha)
 
 def update_file(file_name, content):
     try:
