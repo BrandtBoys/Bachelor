@@ -1,3 +1,4 @@
+import re
 from dotenv import load_dotenv
 import os
 import uuid
@@ -5,6 +6,7 @@ import github
 import detect_language
 import remove_comments
 import time
+import difflib
 
 load_dotenv()
 
@@ -47,15 +49,16 @@ def main():
         update_file(".github/workflows/update_docs.yml",workflow_code)
     
     #add loop of commits
-    for commit in reversed(commits[end:start+1]):
+    for commit in reversed(commits[end:start]):
         print(commit)
         add_commit_run_agent(commit.sha)
     
 
 def add_commit_run_agent(commit_sha):
-
+    branch = repo.get_branch(branch_name)
     #Get the HEAD commit of test branch
     head_commit = branch.commit.sha 
+    print(head_commit)
     #code diff between the HEAD commit and the next commit
     diff = repo.compare(head_commit,commit_sha) 
 
@@ -63,13 +66,34 @@ def add_commit_run_agent(commit_sha):
         #use helper script to detect which language the modified file is written in
         file_language = detect_language.detect_language(file.filename) 
         #Get the version of the modified file from the new commit
-        content = repo.get_contents(file.filename,ref=commit_sha).decoded_content 
+        content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
         #use helper script to remove all comments from the modified file
         cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
-        update_file(file.filename, cleaned_source)
+        #get the content of the file from the current HEAD commit
+        head_content = repo.get_contents(file.filename,ref=head_commit).decoded_content.decode("utf-8")
+        #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
+        #would remove, since the new commit holds no comments.
+        differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
+        #change the generator object to a list
+        differ_list = list(differ)
+        #the new file, with the latest code changes, but the comments from the previous state.
+        modified_differ = []
+        for line in differ_list:
+            if re.match(r"-\s*#", line):
+                modified_differ.append(line[2:])
+            else:
+                modified_differ.append(line)
+
+        modified_file = difflib.restore(modified_differ, 2)
+        modified_file_str = "".join(modified_file)
+        
+        #commit the modified file to the branch
+        update_file(file.filename,modified_file_str)
+
 
     workflow = repo.get_workflow(WORKFLOW_NAME)
     workflow.create_dispatch(ref=branch_name)
+    time.sleep(5)
 
     # wait to see when the action is finished, before moving on.
     run = workflow.get_runs()[0]
