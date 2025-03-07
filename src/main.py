@@ -1,87 +1,36 @@
-- ZGVmIG11bChhLGIpOgogICAgcmV0dXJuIGEqYgoKZGVmIGNhbGN1bGF0ZShh
+def mul(a,b):
+    # This function multiplies two numbers and returns the result.
+    return a*b
 
-- KToKICAgIHJlcyA9IDEKICAgIHdoaWxlIGEgPiAwOiAjVGVzdCBjb21tZW50
+def calculate(a):
+    # This function calculates the factorial of a number using recursion.
+    res = 1
+    while a > 0: 
+        # The multiplication is done in-place, meaning it modifies the original value.
+        res = mul(res,a)
+        a = a -1
+    return res
 
-- CiAgICAgICAgcmVzID0gbXVsKHJlcyxhKQogICAgICAgIGEgPSBhIC0xCiAg
+def sub(a,b):
+    # This function subtracts two numbers and returns the result. It also prints "Test print" to the console.
+    print("Test print")
+    return a-b
 
-- ICByZXR1cm4gcmVzCgpkZWYgc3ViKGEsYik6CiAgICAjQ29tbWVudAogICAg
+def enough_balance_to_do_stuff(balance, amount):
+    # This function checks if there is enough balance to do something by comparing the difference between balance and amount.
+    return sub(balance, amount) > 0 
 
-- cHJpbnQoIlRlc3QgcHJpbnQiKQogICAgcmV0dXJuIGEtYgoKZGVmIGVub3Vn
+def not_enough_balance_to_do_stuff(balance, amount):
+    # This function checks if there is not enough balance to do something by negating the result of the previous function.
+    print(amount)
+    return not sub(balance, amount) > 0
 
-- aF9iYWxhbmNlX3RvX2RvX3N0dWZmKGJhbGFuY2UsIGFtb3VudCk6CiAgICBy
-
-- ZXR1cm4gc3ViKGJhbGFuY2UsIGFtb3VudCkgPiAwICNUZXN0IGNvbW1lbnQK
-
-- CmRlZiBub3RfZW5vdWdoX2JhbGFuY2VfdG9fZG9fc3R1ZmYoYmFsYW5jZSwg
-
-- YW1vdW50KToKICAgIHByaW50KGFtb3VudCkKICAgIHJldHVybiBub3Qgc3Vi
-
-- KGJhbGFuY2UsIGFtb3VudCkgPiAwCgoKCg==
-
-+ def mul(a,b):
-
-+     return a*b
-
-+ 
-
-+ def calculate(a):
-
-+     res = 1
-
-+     while a > 0: 
-
-+         res = mul(res,a)
-
-+         a = a -1
-
-+     return res
-
-+ 
-
-+ def sub(a,b):
-
-+     
-
-+     print("Test print")
-
-+     return a-b
-
-+ 
-
-+ def enough_balance_to_do_stuff(balance, amount):
-
-+     return sub(balance, amount) > 0 
-
-+ 
-
-+ def not_enough_balance_to_do_stuff(balance, amount):
-
-+     print(amount)
-
-+     return not sub(balance, amount) > 0
-
-+ 
-
-+ def buyPizza(price, balance):
-
-+     
-
-+     balance = balance - price
-
-+     pizza = {
-
-+         "price": price,
-
-+         "type": "pepperoni",
-
-+         "size": "huge"
-
-+     }
-
-+     return pizza
-
-+ 
-
-+ 
-
-+ 
+def buyPizza(price, balance):
+    # This function buys a pizza by subtracting the price from the balance and returns the pizza details.
+    balance = balance - price
+    pizza = {
+        "price": price,
+        "type": "pepperoni",
+        "size": "huge"
+    }
+    return pizza
