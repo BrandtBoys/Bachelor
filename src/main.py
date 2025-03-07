@@ -9,7 +9,6 @@ def calculate(a):
     return res
 
 def sub(a,b):
-#Comment
     
     print("Test print")
     return a-b
@@ -33,7 +32,8 @@ def buyPizza(price, balance):
     enough = not_enough_balance(new_balance, price)
     if enough:
         return pizza
-    else return None
+    else:
+        return None
 
 
 
