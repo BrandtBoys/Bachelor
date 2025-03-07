@@ -15,7 +15,6 @@ def calculate(a):
 
 def sub(a,b):
   # This function subtracts two numbers together and prints a test message.
-    
     print("Test print")
   # The result of the subtraction is returned.
     return a-b
@@ -49,6 +48,3 @@ def buyPizza(price, balance):
     if enough:
         return pizza
     else return None
-
-
-
