@@ -13,7 +13,6 @@ def calculate(a):
     return res
 
 def sub(a,b):
-    
   # This function subtracts one number from another and prints "Test print" in the process.
   # The result is then returned.
     print("Test print")
@@ -31,7 +30,6 @@ def not_enough_balance_to_do_stuff(balance, amount):
     return not sub(balance, amount) > 0
 
 def buyPizza(price, balance):
-    
   # This function simulates buying a pizza by subtracting 'price' from 'balance'.
   # It then creates a dictionary with the price, type, and size of the pizza, which is returned.
     new_balance = sub(balance, price)
@@ -41,10 +39,8 @@ def buyPizza(price, balance):
         "size": "huge"
     }
     
-    enough = not_enough_balance(new_balance, price)
+    enough = not_enough_balance(new_balance, price)  # Check if there's enough balance
     if enough:
-        return pizza
-    else return None
-
-
-
+        return pizza  # Return the pizza if there's enough balance
+    else:
+        return None  # Return None if there's not enough balance
