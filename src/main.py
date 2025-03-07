@@ -1,95 +1,48 @@
-- ZGVmIG11bChhLGIpOgogICAgcmV0dXJuIGEqYgoKZGVmIGNhbGN1bGF0ZShh
+def mul(a,b):
+    # Multiplies two numbers together
+    return a*b
 
-- KToKICAgIHJlcyA9IDEKICAgIHdoaWxlIGEgPiAwOiAjVGVzdCBjb21tZW50
+# Calculates the factorial of a number using multiplication
+def calculate(a):
+    res = 1
+    while a > 0: 
+        # Use the multiplication function to multiply the result by 'a'
+        res = mul(res,a)
+        # Decrement 'a' for the next iteration
+        a = a -1
+    return res
 
-- CiAgICAgICAgcmVzID0gbXVsKHJlcyxhKQogICAgICAgIGEgPSBhIC0xCiAg
+# Subtracts one number from another
+def sub(a,b):
+    print("Test print")
+    # Return the difference between 'a' and 'b'
+    return a-b
 
-- ICByZXR1cm4gcmVzCgpkZWYgc3ViKGEsYik6CiAgICAjQ29tbWVudAogICAg
+# Checks if there is enough balance to do something
+def enough_balance_to_do_stuff(balance, amount):
+    # Use the subtraction function to subtract 'amount' from 'balance'
+    return sub(balance, amount) > 0 
 
-- cHJpbnQoIlRlc3QgcHJpbnQiKQogICAgcmV0dXJuIGEtYgoKZGVmIGVub3Vn
+# Checks if there is not enough balance to do something
+def not_enough_balance_to_do_stuff(balance, amount):
+    print(amount)
+    # Return True if 'balance' is less than or equal to 'amount', False otherwise
+    return not sub(balance, amount) > 0
 
-- aF9iYWxhbmNlX3RvX2RvX3N0dWZmKGJhbGFuY2UsIGFtb3VudCk6CiAgICBy
-
-- ZXR1cm4gc3ViKGJhbGFuY2UsIGFtb3VudCkgPiAwICNUZXN0IGNvbW1lbnQK
-
-- CmRlZiBub3RfZW5vdWdoX2JhbGFuY2VfdG9fZG9fc3R1ZmYoYmFsYW5jZSwg
-
-- YW1vdW50KToKICAgIHByaW50KGFtb3VudCkKICAgIHJldHVybiBub3Qgc3Vi
-
-- KGJhbGFuY2UsIGFtb3VudCkgPiAwCgoKCg==
-
-+ def mul(a,b):
-
-+     return a*b
-
-+ 
-
-+ def calculate(a):
-
-+     res = 1
-
-+     while a > 0: 
-
-+         res = mul(res,a)
-
-+         a = a -1
-
-+     return res
-
-+ 
-
-+ def sub(a,b):
-
-+     
-
-+     print("Test print")
-
-+     return a-b
-
-+ 
-
-+ def enough_balance_to_do_stuff(balance, amount):
-
-+     return sub(balance, amount) > 0 
-
-+ 
-
-+ def not_enough_balance_to_do_stuff(balance, amount):
-
-+     print(amount)
-
-+     return not sub(balance, amount) > 0
-
-+ 
-
-+ def buyPizza(price, balance):
-
-+     
-
-+     new_balance = sub(balance, price)
-
-+     pizza = {
-
-+         "price": price,
-
-+         "type": "pepperoni",
-
-+         "size": "huge"
-
-+     }
-
-+     
-
-+     enough = not_enough_balance(new_balance, price)
-
-+     if enough:
-
-+         return pizza
-
-+     else return None
-
-+ 
-
-+ 
-
-+ 
+# Buys a pizza if there is enough balance
+def buyPizza(price, balance):
+    # Subtract the price of the pizza from the balance
+    new_balance = sub(balance, price)
+    # Create a dictionary with the pizza details
+    pizza = {
+        "price": price,
+        "type": "pepperoni",
+        "size": "huge"
+    }
+    # Check if there is enough balance to buy the pizza
+    enough = not_enough_balance_to_do_stuff(new_balance, price)
+    # Return the pizza if there is enough balance, None otherwise
+    if enough:
+        return pizza
+    else:
+        return None
