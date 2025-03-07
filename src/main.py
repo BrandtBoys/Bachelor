@@ -1,42 +1,45 @@
-  def mul(a,b):
-      return a*b
+def mul(a,b):
+    # This function multiplies two numbers and returns the result
+    return a*b
+
+def calculate(a):
+    res = 1
++-     while a > 0: #Test comment
+++     while a > 0: 
++          res = mul(res,a)
++          a = a -1
++      return res
   
-  def calculate(a):
-      res = 1
--     while a > 0: #Test comment
-+     while a > 0: 
-          res = mul(res,a)
-          a = a -1
-      return res
+def sub(a,b):
++-     #Comment
+++     
++      print("Test print")
++      return a-b
   
-  def sub(a,b):
--     #Comment
-+     
-      print("Test print")
-      return a-b
+def enough_balance_to_do_stuff(balance, amount):
++-     return sub(balance, amount) > 0 #Test comment
+++     return sub(balance, amount) > 0 
   
-  def enough_balance_to_do_stuff(balance, amount):
--     return sub(balance, amount) > 0 #Test comment
-?                                     -------------
-+     return sub(balance, amount) > 0 
+def not_enough_balance_to_do_stuff(balance, amount):
+    print(amount)
++-     return not sub(balance, amount) > 0
+++      return not sub(balance, amount) > 0
   
-  def not_enough_balance_to_do_stuff(balance, amount):
-      print(amount)
-      return not sub(balance, amount) > 0
-  
-+ def buyPizza(price, balance):
-+     
+def buyPizza(price, balance):
++-     new_balance = sub(balance, price)
+++     
 +     new_balance = sub(balance, price)
++     
 +     pizza = {
 +         "price": price,
 +         "type": "pepperoni",
 +         "size": "huge"
 +     }
++-     enough = not_enough_balance(new_balance, price)
+++     
++     enough = not_enough_balance_to_do_stuff(new_balance, price)
 +     
-+     enough = not_enough_balance(new_balance, price)
 +     if enough:
 +         return pizza
-+     else return None
-  
-  
-+ 
++     else:
++         return None
