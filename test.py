@@ -1,3 +1,4 @@
+import json
 import re
 from dotenv import load_dotenv
 import os
@@ -5,6 +6,8 @@ import uuid
 import github
 import detect_language
 import remove_comments
+from comment_extractor import extract_from_content
+from datetime import datetime
 import time
 import difflib
 
@@ -26,8 +29,11 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
-start = 2  # what index of commit the test should start from
-end = 0  # what index of commit the test should end at
+start = 3  # what index of commit the test should start from
+end = 1  # what index of commit the test should end at
+
+#set of files which have been modified during the test
+modified_files = set()
 
 #the list of all commits from a given branch, where index 0 is HEAD
 commits = list(repo.get_commits(sha="main")) 
@@ -53,6 +59,48 @@ def main():
         print(commit)
         add_commit_run_agent(commit.sha)
     
+    #fetch the latest changes to the test branch
+    branch = repo.get_branch(branch_name)
+    #fetch the HEAD commit of test branch
+    agent_HEAD_commit = branch.commit.sha
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Define the base results directory
+    results_dir = os.path.join("results", timestamp)
+    os.makedirs(results_dir, exist_ok=True)
+
+    #given source code, pairs of code and their associated comments are saved in list
+    for file in modified_files:
+        # make folder to store results in
+        file_dir = os.path.join(results_dir, file)
+        os.makedirs(file_dir, exist_ok=True)
+
+        file_language = detect_language.detect_language(file) 
+
+        agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
+        agent_comment_code_pairs = extract_from_content(agent_content, file_language)
+
+        # extract only the file name, not folders and format.
+        file_name = re.sub(r".*/|\.py$", "", file)
+
+        # Define JSON file path
+        agent_json_file_path = os.path.join(file_dir, f"agent_{file_name}.json")
+
+        # Save extracted data to JSON
+        with open(agent_json_file_path, "w", encoding="utf-8") as f:
+            json.dump(agent_comment_code_pairs, f, indent=4)
+
+        original_content = repo.get_contents(file,ref=commits[0])
+        original_comment_code_pairs = extract_from_content(original_content, file_language)
+
+        original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
+
+        # Save extracted data to JSON
+        with open(original_json_file_path, "w", encoding="utf-8") as f:
+            json.dump(original_comment_code_pairs, f, indent=4)
+
+
 
 def add_commit_run_agent(commit_sha):
     branch = repo.get_branch(branch_name)
@@ -63,6 +111,8 @@ def add_commit_run_agent(commit_sha):
     diff = repo.compare(head_commit,commit_sha) 
 
     for file in diff.files:
+        #add the file to the set of modified files:
+        modified_files.add(file.filename)
         #use helper script to detect which language the modified file is written in
         file_language = detect_language.detect_language(file.filename) 
         #Get the version of the modified file from the new commit

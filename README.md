@@ -11,3 +11,6 @@ for mac
 alias python3 "/opt/homebrew/bin/python3.12"
 ```
 
+## to-do
+- [] add metadata to test results
+- [] create workflow, which pushes change done to the result folder to main.

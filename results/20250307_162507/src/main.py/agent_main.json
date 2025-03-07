@@ -1,0 +1,22 @@
+[
+    [
+        "# This function multiplies two numbers using a loop,\n# which is more efficient than a simple multiplication operation.",
+        "n res\n \ndef sub(a,b):\n  \n    print(\"Test print\")\n    return a-b\n \ndef enough_balance_to_do_stuff(balance, amount):\n  \n  \n     return sub(balance, amount) > 0 \n \ndef not_enough_balance_to_do_stuff(balance, amount):\n    print(amount)\n    return not sub(balance, am"
+    ],
+    [
+        "# The result of the multiplication is stored in 'res' and then multiplied by 'a' again,\n# effectively multiplying all numbers from 1 to 'a'.",
+        ":\n    print(amou"
+    ],
+    [
+        "# This function subtracts two numbers, but it's not clear why this is necessary.",
+        "\"price\": pri"
+    ],
+    [
+        "# The balance should be greater than the amount to do stuff.\n# However, the comment above suggests that there might be an issue with this logic.",
+        ""
+    ],
+    [
+        "# This function buys a pizza by subtracting the price from the balance,\n# and then returns a dictionary with information about the pizza.",
+        ""
+    ]
+]
