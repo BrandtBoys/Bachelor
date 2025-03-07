@@ -18,56 +18,59 @@ repo.git.checkout(branch_name)
 with open(os.getenv('GITHUB_ENV'), "a") as env_file:
     env_file.write(f"BRANCH_NAME={branch_name}\n")
 
-# Compare changes and create diff
+# Compare changes and find changed files
 hcommit = repo.head.commit
-diff = repo.git.diff("HEAD~1", "HEAD","src/")
 # print(diff)
 diff_files = list(hcommit.diff("HEAD~1"))
-source_path = str(diff_files[0].a_path)
 
-# fetch docs files
-with open(source_path, "r") as f:
-    source_code = f.read()
+for file in diff_files:
+    source_path = str(file.a_path)
+    #find only diff for the individual file
+    diff = repo.git.diff("HEAD~1", "HEAD",source_path)
 
-# Create prompt for LLM
-prompt = ChatPromptTemplate.from_template(
-    """
-    You are a documentation assistant. A code change was just committed.
+    # fetch docs files
+    with open(source_path, "r") as f:
+        source_code = f.read()
 
-    ## Instructions:
-    - Only modify the provided `source_code` by adding inline comments to explain the functionality of the code.
-    - Focus on the lines changed in `code_diff`, but you may look a few lines above and below the changes to understand their context.
-    - Do **not** modify any code. Only add comments.
-    - The comments should explain **why** the code works the way it does, not just describe what was changed.
-    - Ensure the comments are clear, concise, and helpful.
-    - Do **not** add headers, footers, explanations, or any extra text. Only return the fully formatted `source_code` with comments added.
+    # Create prompt for LLM
+    prompt = ChatPromptTemplate.from_template(
+        """
+        You are a documentation assistant. A code change was just committed.
 
-    ## Code Change:
-    {code_diff}
+        ## Instructions:
+        - Only modify the provided `source_code` by adding inline comments to explain the functionality of the code.
+        - Focus on the lines changed in `code_diff`, but you may look a few lines above and below the changes to understand their context.
+        - Do **not** modify any code. Only add comments.
+        - The comments should explain **why** the code works the way it does, not just describe what was changed.
+        - Ensure the comments are clear, concise, and helpful.
+        - Do **not** add headers, footers, explanations, or any extra text. Only return the fully formatted `source_code` with comments added.
 
-    ## Previous Source Code:
-    {source_code}
+        ## Code Change:
+        {code_diff}
 
-    Return the updated source code with inline comments that explain the changed functionality:
-    """
-)
+        ## Previous Source Code:
+        {source_code}
 
-prompt_input = prompt.format(
-    code_diff = diff,
-    source_code = source_code
-)
+        Return the updated source code with inline comments that explain the changed functionality:
+        """
+    )
 
-# the LLM does it work
-llm = ChatOllama(model="llama3.2", temperature=0.1)
-llm_response = llm.invoke(prompt_input)
+    prompt_input = prompt.format(
+        code_diff = diff,
+        source_code = source_code
+    )
 
-# Write changes to docs
-with open(source_path, "w") as f:
-    f.write(llm_response.content)
+    # the LLM does it work
+    llm = ChatOllama(model="llama3.2", temperature=0.1)
+    llm_response = llm.invoke(prompt_input)
 
-# Add changes
-add_files = [source_path]
-repo.index.add(add_files)
+    # Write changes to docs
+    with open(source_path, "w") as f:
+        f.write(llm_response.content)
+
+    # Add changes
+    add_files = [source_path]
+    repo.index.add(add_files)
 
 # Commit changes
 repo.index.commit("Updated inline documentation")
