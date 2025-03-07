@@ -22,13 +22,17 @@ def not_enough_balance_to_do_stuff(balance, amount):
 
 def buyPizza(price, balance):
     
-    balance = balance - price
+    new_balance = sub(balance, price)
     pizza = {
         "price": price,
         "type": "pepperoni",
         "size": "huge"
     }
-    return pizza
+    
+    enough = not_enough_balance(new_balance, price)
+    if enough:
+        return pizza
+    else return None
 
 
 
