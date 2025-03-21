@@ -5,13 +5,16 @@ from dotenv import load_dotenv
 import os
 import uuid
 import github
+from tree_sitter import Parser
+from tree_sitter_languages import get_language
 import detect_language
 import remove_comments
-from comment_extractor import extract_from_content
+from comment_extractor import extract_comments_and_code_pairs, extract_from_content
 from datetime import datetime
 import time
 import difflib
 from github.InputGitTreeElement import InputGitTreeElement
+from sentence_transformers import CrossEncoder
 
 load_dotenv()
 
@@ -47,9 +50,10 @@ branch = repo.get_branch(branch_name)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Define the base results directory
+os.makedirs("results", exist_ok=True)
 result_file = os.path.join("results", f"{timestamp}.csv")
 with open(result_file, mode="w", newline="", encoding="utf-8") as f:
-    header = ["Semantic-Score", "Code", "Original-Comment", "Filename","Agent-Comment"]
+    header = ["Semantic-Score", "Code", "Original-Comment","Agent-Comment", "Filename", "Agent-Commit"]
     writer = csv.writer(f)
     writer.writerow(header)
 
@@ -188,6 +192,8 @@ def add_commit_run_agent(commit_sha):
     agent_HEAD_commit = branch.commit.sha
 
     result_rows = []
+    comment_pairs = []
+    comment_metedata = []
 
     for filename, content in modified_files:
         file_language = detect_language.detect_language(filename) 
@@ -196,13 +202,19 @@ def add_commit_run_agent(commit_sha):
         original_content = repo.get_contents(filename,ref=commit_sha)
         original_comment_code_pairs = extract_from_content(original_content, file_language)
 
-        agent_content = repo.get_contents(filename,ref=agent_HEAD_commit)
-        agent_comment_code_pairs = extract_from_content(agent_content, file_language)
+        agent_diff_content = get_agent_diff_content(repo, filename, agent_HEAD_commit, file_language)
+        agent_comment_code_pairs = extract_comments_and_code_pairs(agent_diff_content, file_language)
 
         for agComment, agCode in agent_comment_code_pairs:
             for orgComment, orgCode in original_comment_code_pairs:
-                if orgCode.strip() == agCode.strip():
-                    result_rows.append(["5", orgCode, orgComment, agComment, filename, agent_HEAD_commit])
+                if orgCode.strip() == agCode.strip() and orgComment.strip() != agComment.strip():
+                    comment_pairs.append([orgComment, agComment])
+                    comment_metedata.append([orgCode, filename, agent_HEAD_commit])
+
+    scores = calculate_semantic_scores(comment_pairs)
+
+    for score, (orgComment, agComment), (code, filename, commit) in zip(scores, comment_pairs, comment_metedata):
+        result_rows.append([score, code, orgComment, agComment, filename, agent_HEAD_commit])
 
     with open(result_file, mode="a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -261,6 +273,59 @@ def update_file(file_name, content):
             )
         else:
             raise  # Raise other unexpected errors
+
+def calculate_semantic_scores(commentPairs):
+    model = CrossEncoder("cross-encoder/stsb-roberta-base")
+    scores = model.predict(commentPairs)
+    return scores
+
+def get_agent_diff_content(repo, filename, commit_sha, file_language):
+    # Get commits and file contents
+    commit = repo.get_commit(sha=commit_sha)
+    old_content = repo.get_contents(filename, ref=commit.parents[0].sha).decoded_content.decode()
+    new_content = repo.get_contents(filename, ref=commit.sha).decoded_content.decode()
+
+    # Generate diff
+    diff = difflib.unified_diff(
+        old_content.splitlines(), new_content.splitlines(), n=0
+    )
+
+    # Extract changed line numbers
+    changed_lines = set()
+    for line in diff:
+        if line.startswith("@@"):
+            parts = line.split(" ")
+            new_range = parts[2]  # like +12,3
+            start_line = int(new_range.split(",")[0][1:])
+            line_count = int(new_range.split(",")[1]) if "," in new_range else 1
+            for i in range(start_line, start_line + line_count):
+                changed_lines.add(i)
+
+    # Tree-sitter parsing
+    parser = Parser()
+    language = get_language(file_language)
+    parser.set_language(language)
+    tree = parser.parse(bytes(new_content, "utf8"))
+    root_node = tree.root_node
+
+    # Find affected code blocks
+    def find_affected_nodes(node, changed_lines, results):
+        if node.type in ["function_definition", "class_definition", "expression_statement", "assignment"]:
+            start_line = node.start_point[0] + 1
+            end_line = node.end_point[0] + 1
+            if any(line in changed_lines for line in range(start_line, end_line + 1)):
+                results.append(new_content.splitlines()[start_line - 1:end_line])
+        for child in node.children:
+            find_affected_nodes(child, changed_lines, results)
+
+    affected_blocks = []
+    find_affected_nodes(root_node, changed_lines, affected_blocks)
+
+    # Flatten blocks into strings
+    pruned_code = "\n".join("\n".join(block) for block in affected_blocks)
+    return pruned_code
+
+
 
 if __name__ == "__main__":
     main()
