@@ -5,7 +5,6 @@ def remove_comments(code_language, source_code):
     parser = Parser()
     language = get_language(code_language)
     parser.set_language(language)
-
     tree = parser.parse(source_code)
     root_node = tree.root_node
 

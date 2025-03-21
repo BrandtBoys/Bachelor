@@ -77,8 +77,9 @@ def main():
         file_dir = os.path.join(results_dir, file)
         os.makedirs(file_dir, exist_ok=True)
 
-        file_language = detect_language.detect_language(file) 
-
+        file_language = detect_language.detect_language(file)
+        if not file_language:
+            continue
         agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
         agent_comment_code_pairs = extract_from_content(agent_content, file_language)
 
@@ -115,10 +116,13 @@ def add_commit_run_agent(commit_sha):
     modified_files = []
 
     for file in diff.files:
-        #add the file to the set of modified files:
-        modified_filepaths.add(file.filename)
         #use helper script to detect which language the modified file is written in
         file_language = detect_language.detect_language(file.filename) 
+        if not file_language:
+            continue
+        #add the file to the set of modified files:
+        modified_filepaths.add(file.filename)
+
         #Get the version of the modified file from the new commit
         content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
         #use helper script to remove all comments from the modified file
@@ -166,6 +170,9 @@ def add_commit_run_agent(commit_sha):
         run = workflow.get_runs()[0]  # Refresh latest run
 
 def commit_multiple_files(ref, files, last_commit, commit_message):
+    if not files:
+        print("No file-changes to commit")
+        return
     # Create blobs for each file (this uploads the content to GitHub)
     blobs = []
     for path, content in files:
