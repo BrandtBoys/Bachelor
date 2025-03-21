@@ -10,6 +10,7 @@ from comment_extractor import extract_from_content
 from datetime import datetime
 import time
 import difflib
+from github.InputGitTreeElement import InputGitTreeElement
 
 load_dotenv()
 
@@ -30,10 +31,10 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
 start = 3  # what index of commit the test should start from
-end = 1  # what index of commit the test should end at
+end = 0  # what index of commit the test should end at
 
 #set of files which have been modified during the test
-modified_files = set()
+modified_filepaths = set()
 
 #the list of all commits from a given branch, where index 0 is HEAD
 commits = list(repo.get_commits(sha="main")) 
@@ -71,7 +72,7 @@ def main():
     os.makedirs(results_dir, exist_ok=True)
 
     #given source code, pairs of code and their associated comments are saved in list
-    for file in modified_files:
+    for file in modified_filepaths:
         # make folder to store results in
         file_dir = os.path.join(results_dir, file)
         os.makedirs(file_dir, exist_ok=True)
@@ -91,7 +92,7 @@ def main():
         with open(agent_json_file_path, "w", encoding="utf-8") as f:
             json.dump(agent_comment_code_pairs, f, indent=4)
 
-        original_content = repo.get_contents(file,ref=commits[0])
+        original_content = repo.get_contents(file,ref=commits[0].sha)
         original_comment_code_pairs = extract_from_content(original_content, file_language)
 
         original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
@@ -104,15 +105,18 @@ def main():
 
 def add_commit_run_agent(commit_sha):
     branch = repo.get_branch(branch_name)
+    ref = repo.get_git_ref(f'heads/{branch_name}')
     #Get the HEAD commit of test branch
-    head_commit = branch.commit.sha 
-    print(head_commit)
+    head_commit_sha = branch.commit.sha 
+    head_commit = repo.get_git_commit(head_commit_sha)
     #code diff between the HEAD commit and the next commit
-    diff = repo.compare(head_commit,commit_sha) 
+    diff = repo.compare(head_commit_sha,commit_sha) 
+
+    modified_files = []
 
     for file in diff.files:
         #add the file to the set of modified files:
-        modified_files.add(file.filename)
+        modified_filepaths.add(file.filename)
         #use helper script to detect which language the modified file is written in
         file_language = detect_language.detect_language(file.filename) 
         #Get the version of the modified file from the new commit
@@ -120,7 +124,16 @@ def add_commit_run_agent(commit_sha):
         #use helper script to remove all comments from the modified file
         cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
         #get the content of the file from the current HEAD commit
-        head_content = repo.get_contents(file.filename,ref=head_commit).decoded_content.decode("utf-8")
+        try:
+            # Try to fetch the file from the current HEAD (test branch)
+            head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
+        except github.GithubException as e:
+            if e.status == 404:
+                print(f"File {file.filename} does not exist in {head_commit_sha} - treating as newly added file.")
+                head_content = ""
+            else:
+                print(e.message)
+
         #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
         #would remove, since the new commit holds no comments.
         differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
@@ -137,10 +150,10 @@ def add_commit_run_agent(commit_sha):
         modified_file = difflib.restore(modified_differ, 2)
         modified_file_str = "".join(modified_file)
         
-        #commit the modified file to the branch
-        update_file(file.filename,modified_file_str)
+        #add modified files to list
+        modified_files.append((file.filename, modified_file_str))
 
-
+    commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments.")
     workflow = repo.get_workflow(WORKFLOW_NAME)
     workflow.create_dispatch(ref=branch_name)
     time.sleep(5)
@@ -152,6 +165,26 @@ def add_commit_run_agent(commit_sha):
         time.sleep(5)  # Wait and check again
         run = workflow.get_runs()[0]  # Refresh latest run
 
+def commit_multiple_files(ref, files, last_commit, commit_message):
+    # Create blobs for each file (this uploads the content to GitHub)
+    blobs = []
+    for path, content in files:
+        blob = repo.create_git_blob(content, "utf-8")
+        blobs.append((path, blob))
+
+    # Create a tree that includes all files
+    tree_elements = []
+    for path, blob in blobs:
+        tree_element = InputGitTreeElement(path=path, mode="100644", type="blob", sha=blob.sha)
+        tree_elements.append(tree_element)
+
+    new_tree = repo.create_git_tree(tree_elements, last_commit.tree)
+
+    new_commit = repo.create_git_commit(commit_message, new_tree, [last_commit])
+
+    #Move the branch pointer to the new commit
+    ref.edit(new_commit.sha)
+
 def update_file(file_name, content):
     try:
         # Check if file exists in the branch
@@ -160,7 +193,7 @@ def update_file(file_name, content):
         # If file exists, update it
         repo.update_file(
             path=file_name,
-            message="Updated ${file_name} in the test environment",
+            message=f"Updated {file_name} in the test environment",
             content=content,
             sha=contents.sha,  # Required for updating an existing file
             branch=branch_name
@@ -171,7 +204,7 @@ def update_file(file_name, content):
         if "404" in str(e):  # File not found error
             repo.create_file(
                 path=file_name,
-                message="Added ${file_name} to the test environment",
+                message=f"Added {file_name} to the test environment",
                 content=content,
                 branch=branch_name
             )
