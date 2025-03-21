@@ -1,3 +1,4 @@
+import csv
 import json
 import re
 from dotenv import load_dotenv
@@ -30,7 +31,7 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
-start = 3  # what index of commit the test should start from
+start = 2  # what index of commit the test should start from
 end = 0  # what index of commit the test should end at
 
 #set of files which have been modified during the test
@@ -42,6 +43,15 @@ commits = list(repo.get_commits(sha="main"))
 #Branch out to test env, from the specified commit you want to start the test from
 repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
 branch = repo.get_branch(branch_name)
+
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+# Define the base results directory
+result_file = os.path.join("results", f"{timestamp}.csv")
+with open(result_file, mode="w", newline="", encoding="utf-8") as f:
+    header = ["Semantic-Score", "Code", "Original-Comment", "Filename","Agent-Comment"]
+    writer = csv.writer(f)
+    writer.writerow(header)
 
 def main():
 
@@ -60,47 +70,50 @@ def main():
         print(commit)
         add_commit_run_agent(commit.sha)
     
-    #fetch the latest changes to the test branch
-    branch = repo.get_branch(branch_name)
-    #fetch the HEAD commit of test branch
-    agent_HEAD_commit = branch.commit.sha
+    # #fetch the latest changes to the test branch
+    # branch = repo.get_branch(branch_name)
+    # #fetch the HEAD commit of test branch
+    # agent_HEAD_commit = branch.commit.sha
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Define the base results directory
-    results_dir = os.path.join("results", timestamp)
-    os.makedirs(results_dir, exist_ok=True)
+    # # Define the base results directory
+    # result_file = os.path.join("results", f"{timestamp}.csv")
+    # with open(result_file, mode="w", newline="", encoding="utf-8") as f:
+    #     header = ["Semantic-Score", "Code", "Original-Comment", "Filename","Agent-Comment"]
+    #     writer = csv.writer(f)
+    #     writer.writerow(header)
 
-    #given source code, pairs of code and their associated comments are saved in list
-    for file in modified_filepaths:
-        # make folder to store results in
-        file_dir = os.path.join(results_dir, file)
-        os.makedirs(file_dir, exist_ok=True)
+    # #given source code, pairs of code and their associated comments are saved in list
+    # for file in modified_filepaths:
+    #     # make folder to store results in
+    #     file_dir = os.path.join(results_dir, file)
+    #     os.makedirs(file_dir, exist_ok=True)
 
-        file_language = detect_language.detect_language(file)
-        if not file_language:
-            continue
-        agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
-        agent_comment_code_pairs = extract_from_content(agent_content, file_language)
+    #     file_language = detect_language.detect_language(file)
+    #     if not file_language:
+    #         continue
+    #     agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
+    #     agent_comment_code_pairs = extract_from_content(agent_content, file_language)
 
-        # extract only the file name, not folders and format.
-        file_name = re.sub(r".*/|\.py$", "", file)
+        # # extract only the file name, not folders and format.
+        # file_name = re.sub(r".*/|\.py$", "", file)
 
-        # Define JSON file path
-        agent_json_file_path = os.path.join(file_dir, f"agent_{file_name}.json")
+        # # Define JSON file path
+        # agent_json_file_path = os.path.join(file_dir, f"agent_{file_name}.json")
 
-        # Save extracted data to JSON
-        with open(agent_json_file_path, "w", encoding="utf-8") as f:
-            json.dump(agent_comment_code_pairs, f, indent=4)
+        # # Save extracted data to JSON
+        # with open(agent_json_file_path, "w", encoding="utf-8") as f:
+        #     json.dump(agent_comment_code_pairs, f, indent=4)
 
-        original_content = repo.get_contents(file,ref=commits[0].sha)
-        original_comment_code_pairs = extract_from_content(original_content, file_language)
+        # original_content = repo.get_contents(file,ref=commits[0].sha)
+        # original_comment_code_pairs = extract_from_content(original_content, file_language)
 
-        original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
+        # original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
 
-        # Save extracted data to JSON
-        with open(original_json_file_path, "w", encoding="utf-8") as f:
-            json.dump(original_comment_code_pairs, f, indent=4)
+        # # Save extracted data to JSON
+        # with open(original_json_file_path, "w", encoding="utf-8") as f:
+        #     json.dump(original_comment_code_pairs, f, indent=4)
 
 
 
@@ -168,6 +181,37 @@ def add_commit_run_agent(commit_sha):
         print(f"Workflow running... (current status: {run.status})")
         time.sleep(5)  # Wait and check again
         run = workflow.get_runs()[0]  # Refresh latest run
+
+    #fetch the latest changes to the test branch
+    branch = repo.get_branch(branch_name)
+    #fetch the HEAD commit of test branch
+    agent_HEAD_commit = branch.commit.sha
+
+    result_rows = []
+
+    for filename, content in modified_files:
+        file_language = detect_language.detect_language(filename) 
+        if not file_language:
+            continue
+        original_content = repo.get_contents(filename,ref=commit_sha)
+        original_comment_code_pairs = extract_from_content(original_content, file_language)
+
+        agent_content = repo.get_contents(filename,ref=agent_HEAD_commit)
+        agent_comment_code_pairs = extract_from_content(agent_content, file_language)
+
+        for agComment, agCode in agent_comment_code_pairs:
+            for orgComment, orgCode in original_comment_code_pairs:
+                if orgCode.strip() == agCode.strip():
+                    result_rows.append(["5", orgCode, orgComment, agComment, filename, agent_HEAD_commit])
+
+    with open(result_file, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerows(result_rows)
+
+
+
+
+    
 
 def commit_multiple_files(ref, files, last_commit, commit_message):
     if not files:
