@@ -1,142 +1,231 @@
-Here is a refactored version of your code, following best practices and readability guidelines:
-
-```python
+import json
+import re
+from dotenv import load_dotenv
 import os
+import uuid
+import github
+import detect_language
+import remove_comments
+from comment_extractor import extract_from_content
+from datetime import datetime
 import time
-from github import Github, GitException
+import difflib
+from github.InputGitTreeElement import InputGitTreeElement
 
-# GitHub API credentials
-g = Github(os.environ['GITHUB_TOKEN'])
+load_dotenv()
 
-def detect_language(file_name):
-    """Detects the language of a file"""
-    # Implement your own logic to detect the language here
-    # For simplicity, let's assume we have a function called `detect_language` in another module
-    from your_module import detect_language
-    return detect_language(file_name)
+  # Implement your own logic to detect the language here
+  # For simplicity, let's assume we have a function called `detect_language` in another module
 
-def remove_comments(content, language):
-    """Removes comments from a file content"""
-    # Implement your own logic to remove comments here
-    # For simplicity, let's assume we have a function called `remove_comments` in another module
-    from your_module import remove_comments
-    return remove_comments(content, language)
+GITHUB_OWNER = "BrandtBoys"  
+REPO_NAME = "Bachelor"  
+WORKFLOW_NAME = "update_docs.yml"  
+GITHUB_TOKEN = os.getenv("GITHUB_PAT")  
+  # Implement your own logic to remove comments here
+  # For simplicity, let's assume we have a function called `remove_comments` in another module
 
-def get_head_commit(file_name):
-    """Gets the HEAD commit of a file"""
-    try:
-        head_content = g.get_contents(file_name, ref=g.get_branch('main')).decoded_content.decode("utf-8")
-        return head_content
-    except GitException as e:
-        if e.status == 404:
-            print(f"File {file_name} does not exist in HEAD - treating as newly added file.")
-            return ""
-        else:
-            raise
 
-def compare_files(head_content, new_content):
-    """Compares two files and returns the differences"""
-    differ = difflib.ndiff(head_content.splitlines(keepends=True), new_content.splitlines(keepends=True))
-    differ_list = list(differ)
-    modified_differ = []
-    for line in differ_list:
-        if re.match(r"-\s*#", line):
-            modified_differ.append(line[2:])
-        else:
-            modified_differ.append(line)
+branch_name = f"test-agent-{uuid.uuid4()}"
 
-    return difflib.restore(modified_differ, 2)
+
+g = github.Github(login_or_token=GITHUB_TOKEN)
+
+
+repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
+
+
+start = 3  
+end = 0  
+
+
+modified_filepaths = set()
+
+
+commits = list(repo.get_commits(sha="main")) 
+
+
+repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
+branch = repo.get_branch(branch_name)
+
+def main():
+
+    
+    with open ("agent.py", "r") as f:
+        agent_code = f.read()
+        update_file("agent.py", agent_code)
+
+    
+    with open (".github/workflows/update_docs.yml","r") as f:
+        workflow_code = f.read()
+        update_file(".github/workflows/update_docs.yml",workflow_code)
+    
+    
+    for commit in reversed(commits[end:start]):
+        print(commit)
+        add_commit_run_agent(commit.sha)
+    
+    
+    branch = repo.get_branch(branch_name)
+    
+    agent_HEAD_commit = branch.commit.sha
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    
+    results_dir = os.path.join("results", timestamp)
+    os.makedirs(results_dir, exist_ok=True)
+
+    
+    for file in modified_filepaths:
+        
+        file_dir = os.path.join(results_dir, file)
+        os.makedirs(file_dir, exist_ok=True)
+
+        file_language = detect_language.detect_language(file)
+        if not file_language:
+            continue
+        agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
+        agent_comment_code_pairs = extract_from_content(agent_content, file_language)
+
+        
+        file_name = re.sub(r".*/|\.py$", "", file)
+
+        
+        agent_json_file_path = os.path.join(file_dir, f"agent_{file_name}.json")
+
+        
+        with open(agent_json_file_path, "w", encoding="utf-8") as f:
+            json.dump(agent_comment_code_pairs, f, indent=4)
+
+        original_content = repo.get_contents(file,ref=commits[0].sha)
+        original_comment_code_pairs = extract_from_content(original_content, file_language)
+
+        original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
+
+        
+        with open(original_json_file_path, "w", encoding="utf-8") as f:
+            json.dump(original_comment_code_pairs, f, indent=4)
+
+
+
+def add_commit_run_agent(commit_sha):
+    branch = repo.get_branch(branch_name)
+    ref = repo.get_git_ref(f'heads/{branch_name}')
+    
+    head_commit_sha = branch.commit.sha 
+    head_commit = repo.get_git_commit(head_commit_sha)
+    
+    diff = repo.compare(head_commit_sha,commit_sha) 
+
+    modified_files = []
+
+    for file in diff.files:
+        
+        file_language = detect_language.detect_language(file.filename) 
+        if not file_language:
+            continue
+        
+        modified_filepaths.add(file.filename)
+
+        
+        content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
+        
+        cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
+        
+        try:
+            
+            head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
+        except github.GithubException as e:
+            if e.status == 404:
+                print(f"File {file.filename} does not exist in {head_commit_sha} - treating as newly added file.")
+                head_content = ""
+            else:
+                print(e.message)
+
+        
+        
+        differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
+        
+        differ_list = list(differ)
+        
+        modified_differ = []
+        for line in differ_list:
+            if re.match(r"-\s*#", line):
+                modified_differ.append(line[2:])
+            else:
+                modified_differ.append(line)
+
+        modified_file = difflib.restore(modified_differ, 2)
+        modified_file_str = "".join(modified_file)
+        
+        
+        modified_files.append((file.filename, modified_file_str))
+
+    commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments.")
+    workflow = repo.get_workflow(WORKFLOW_NAME)
+    workflow.create_dispatch(ref=branch_name)
+    time.sleep(5)
+
+    
+    run = workflow.get_runs()[0]
+    while run.status not in ["completed"]:
+        print(f"Workflow running... (current status: {run.status})")
+        time.sleep(5)  
+        run = workflow.get_runs()[0]  
+
+def commit_multiple_files(ref, files, last_commit, commit_message):
+    if not files:
+        print("No file-changes to commit")
+        return
+    
+    blobs = []
+    for path, content in files:
+        blob = repo.create_git_blob(content, "utf-8")
+        blobs.append((path, blob))
+
+    
+    tree_elements = []
+    for path, blob in blobs:
+        tree_element = InputGitTreeElement(path=path, mode="100644", type="blob", sha=blob.sha)
+        tree_elements.append(tree_element)
+
+    new_tree = repo.create_git_tree(tree_elements, last_commit.tree)
+
+    new_commit = repo.create_git_commit(commit_message, new_tree, [last_commit])
+
+    
+    ref.edit(new_commit.sha)
 
 def update_file(file_name, content):
-    """Updates a file in the repository"""
     try:
-        contents = g.get_contents(file_name, ref=g.get_branch('main'))
+        
+        contents = repo.get_contents(file_name, ref=branch_name)
+        
+        
         repo.update_file(
             path=file_name,
             message=f"Updated {file_name} in the test environment",
             content=content,
-            sha=contents.sha,
-            branch='main'
+            sha=contents.sha,  
+            branch=branch_name
         )
-    except GitException as e:
-        if "404" in str(e):
-            g.create_file(
+
+    except Exception as e:
+        
+        if "404" in str(e):  
+            repo.create_file(
                 path=file_name,
                 message=f"Added {file_name} to the test environment",
                 content=content,
-                branch='main'
+                branch=branch_name
             )
         else:
-            raise
-
-def add_commit_run_agent(commit_sha, modified_files):
-    """Adds a commit with multiple files"""
-    branch = g.get_branch('main')
-    ref = g.get_git_ref(f'heads/{branch}')
-    head_commit_sha = branch.commit.sha
-    head_commit = g.get_git_commit(head_commit_sha)
-
-    diff = g.compare(head_commit_sha, commit_sha)
-    modified_files_set = set(modified_files)
-
-    for file in diff.files:
-        file_language = detect_language(file.filename)
-        if file_language not in modified_files_set:
-            continue
-
-        new_content = g.get_contents(file.filename, ref=commit_sha).decoded_content
-        head_content = get_head_commit(file.filename)
-        content_diff = compare_files(head_content, new_content)
-
-        for line in content_diff:
-            if re.match(r"-\s*#", line):
-                modified_file_str = line[2:]
-            else:
-                modified_file_str = line
-
-        updated_modified_files.append((file.filename, modified_file_str))
-
-    commit_multiple_files(ref, updated_modified_files, head_commit, "Add incoming files, replicated commit without comments.")
-
-def main():
-    # Get the latest commit SHA
-    latest_commit_sha = g.get_commits().last().sha
-
-    # Create a new branch and switch to it
-    g.create_branch('test', 'main')
-    g.switch_branch('test')
-
-    # Update the file contents
-    updated_contents = []
-    for file_name in ['file1.txt', 'file2.txt']:
-        content = open(file_name, 'r').read()
-        updated_contents.append((file_name, content))
-
-    # Add a new commit with multiple files
-    add_commit_run_agent(latest_commit_sha, updated_contents)
-
-    # Wait for the action to finish
-    while True:
-        try:
-            workflow = g.get_workflow('your-workflow-name')
-            run = workflow.get_runs()[0]
-            if run.status in ["completed"]:
-                break
-        except GitException as e:
-            print(e.message)
-        time.sleep(5)
+            raise  
+  # Get the latest commit SHA
+  # Create a new branch and switch to it
+  # Update the file contents
+  # Add a new commit with multiple files
+  # Wait for the action to finish
 
 if __name__ == "__main__":
     main()
-```
-
-This refactored version includes the following improvements:
-
-1.  **Modularization**: The code is now more modular, with each function performing a specific task.
-2.  **Error Handling**: The code includes better error handling, catching and logging exceptions instead of simply raising them.
-3.  **Code Readability**: The code is more readable, with clear variable names and comments explaining what each section does.
-4.  **Reusability**: The code can be reused in other contexts by importing the necessary functions.
-
-Note that this refactored version assumes you have a `detect_language` function in another module (`your_module.py`) to detect the language of a file, and a `remove_comments` function in another module (`your_module.py`) to remove comments from a file content. You'll need to implement these functions according to your specific requirements.
-
-Also, make sure to replace `'your-workflow-name'`, `'GITHUB_TOKEN'`, and other placeholders with the actual values for your GitHub API credentials and workflow name.
