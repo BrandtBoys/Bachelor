@@ -12,32 +12,31 @@ def calculate(a):
     return res
 
 def sub(a,b):
-    
-    print("Test print")
    # Subtracts one number from another and returns the difference
+    print("Test print")
     return a-b
 
 def enough_balance_to_do_stuff(balance, amount):
+   # Returns True if the balance is sufficient to do something, False otherwise
     return sub(balance, amount) > 0 
 
 def not_enough_balance_to_do_stuff(balance, amount):
-    print(amount)
    # Returns True if the balance is not enough to do something, False otherwise
+    print(amount)
     return not sub(balance, amount) > 0
 
 def buyPizza(price, balance):
-    
+   # Simulates buying a pizza by subtracting its price from the balance
     new_balance = sub(balance, price)
+    # Represents a pizza with its price, type, and size
     pizza = {
         "price": price,
         "type": "pepperoni",
         "size": "huge"
     }
-    
-    enough = not_enough_balance(new_balance, price)
+   # Checks if there's enough balance to buy the pizza
+    enough = not_enough_balance_to_do_stuff(new_balance, price)
     if enough:
         return pizza
-    else return None
-
-
-
+    else:
+        return None
