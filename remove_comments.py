@@ -5,7 +5,6 @@ def remove_comments(code_language, source_code):
     parser = Parser()
     language = get_language(code_language)
     parser.set_language(language)
-
     tree = parser.parse(source_code)
     root_node = tree.root_node
 
@@ -15,10 +14,11 @@ def remove_comments(code_language, source_code):
         """Recursively collects the byte placement of any comments in a given source code"""
         
         
-        if node.type == "comment":  # finds node types of comment and append there byte start and end to the list
+        if node.type == "comment":  
             comment_placement.append((node.start_byte,node.end_byte))
         
-        # Recursively process children
+      # Recursively process children
+        
         for child in node.children:
             find_comment_placement(child, code)
         

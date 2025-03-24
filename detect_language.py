@@ -1,6 +1,6 @@
 import os
 
-# Mapping of file extensions to programming languages
+
 EXTENSION_TO_LANGUAGE = {
     ".py": "python",
     ".java": "java",
@@ -31,6 +31,6 @@ EXTENSION_TO_LANGUAGE = {
 
 def detect_language(filename):
     """Detects programming language based on file extension."""
-    _, ext = os.path.splitext(filename)  # Extract file extension
-    return EXTENSION_TO_LANGUAGE.get(ext, "unknown")  # Return language or "unknown"
+    _, ext = os.path.splitext(filename)  
+    return EXTENSION_TO_LANGUAGE.get(ext, None)  
 
