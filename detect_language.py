@@ -32,5 +32,5 @@ EXTENSION_TO_LANGUAGE = {
 def detect_language(filename):
     """Detects programming language based on file extension."""
     _, ext = os.path.splitext(filename)  # Extract file extension
-    return EXTENSION_TO_LANGUAGE.get(ext, "unknown")  # Return language or "unknown"
+    return EXTENSION_TO_LANGUAGE.get(ext, None)  # Return language or "unknown"
 
