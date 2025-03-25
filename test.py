@@ -20,13 +20,12 @@ load_dotenv()
 
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
-REPO_NAME = "Bachelor"  # Change this
+REPO_NAME = "flask-fork"  # Change this
 WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
 # Generate a unique branch name
 branch_name = f"test-agent-{uuid.uuid4()}"
-
 #instantiate github auth
 g = github.Github(login_or_token=GITHUB_TOKEN)
 
@@ -34,7 +33,7 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
-start = 2  # what index of commit the test should start from
+start = 15  # what index of commit the test should start from
 end = 0  # what index of commit the test should end at
 
 #set of files which have been modified during the test
@@ -68,6 +67,7 @@ def main():
     with open (".github/workflows/update_docs.yml","r") as f:
         workflow_code = f.read()
         update_file(".github/workflows/update_docs.yml",workflow_code)
+    print(workflow_code)
     
     #add loop of commits
     for commit in reversed(commits[end:start]):
@@ -133,6 +133,9 @@ def add_commit_run_agent(commit_sha):
     modified_files = []
 
     for file in diff.files:
+        #This is to fix the meta problem of handling commits that changes update_docs
+        if file.filename == ".github/workflows/update_docs.yml":
+            continue
         #use helper script to detect which language the modified file is written in
         file_language = detect_language.detect_language(file.filename) 
         if not file_language:
@@ -202,8 +205,7 @@ def add_commit_run_agent(commit_sha):
         original_content = repo.get_contents(filename,ref=commit_sha)
         original_comment_code_pairs = extract_from_content(original_content, file_language)
 
-        agent_diff_content = get_agent_diff_content(repo, filename, agent_HEAD_commit, file_language)
-        agent_comment_code_pairs = extract_comments_and_code_pairs(agent_diff_content, file_language)
+        agent_comment_code_pairs = get_agent_diff_content(repo, filename, agent_HEAD_commit, file_language)
 
         for agComment, agCode in agent_comment_code_pairs:
             for orgComment, orgCode in original_comment_code_pairs:
@@ -214,14 +216,11 @@ def add_commit_run_agent(commit_sha):
     scores = calculate_semantic_scores(comment_pairs)
 
     for score, (orgComment, agComment), (code, filename, commit) in zip(scores, comment_pairs, comment_metedata):
-        result_rows.append([score, code, orgComment, agComment, filename, agent_HEAD_commit])
+        result_rows.append([score, code, orgComment, agComment, filename, commit])
 
     with open(result_file, mode="a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerows(result_rows)
-
-
-
 
     
 
@@ -285,6 +284,7 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
     old_content = repo.get_contents(filename, ref=commit.parents[0].sha).decoded_content.decode()
     new_content = repo.get_contents(filename, ref=commit.sha).decoded_content.decode()
 
+
     # Generate diff
     diff = difflib.unified_diff(
         old_content.splitlines(), new_content.splitlines(), n=0
@@ -293,6 +293,7 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
     # Extract changed line numbers
     changed_lines = set()
     for line in diff:
+        print(line)
         if line.startswith("@@"):
             parts = line.split(" ")
             new_range = parts[2]  # like +12,3
@@ -300,6 +301,9 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
             line_count = int(new_range.split(",")[1]) if "," in new_range else 1
             for i in range(start_line, start_line + line_count):
                 changed_lines.add(i)
+
+    print(changed_lines)
+    print(new_content)
 
     # Tree-sitter parsing
     parser = Parser()
@@ -309,21 +313,45 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
     root_node = tree.root_node
 
     # Find affected code blocks
-    def find_affected_nodes(node, changed_lines, results):
-        if node.type in ["function_definition", "class_definition", "expression_statement", "assignment"]:
+    comments = []
+    comment_code_pairs = []
+    def find_comment_code_pairs(node, changed_lines):
+        nonlocal comments, comment_code_pairs
+        if node.type in ["comment", "block_comment"]:
             start_line = node.start_point[0] + 1
             end_line = node.end_point[0] + 1
             if any(line in changed_lines for line in range(start_line, end_line + 1)):
-                results.append(new_content.splitlines()[start_line - 1:end_line])
+                comment_text = new_content[node.start_byte:node.end_byte].strip()
+                # If the last comment is right above the current one, merge them
+                if comments and comments[-1][1] == node.start_byte - 1:
+                    comments[-1] = (comments[-1][0] + "\n" + comment_text, comments[-1][1])
+                else:
+                    comments.append((comment_text, node.start_byte))
+        elif node.type in ["function_definition", "class_definition", "expression_statement", "assignment"]:
+            code_text = new_content[node.start_byte:node.end_byte].strip()
+            
+            if comments:
+                print(comments)
+                combined_comment = "\n".join(c[0] for c in comments)
+                clean_code_text = remove_comments.remove_comments(file_language, code_text.encode("utf-8")).decode("utf-8")
+                comment_code_pairs.append((combined_comment, clean_code_text))
+                comments = []  # Reset comments after assignment
         for child in node.children:
-            find_affected_nodes(child, changed_lines, results)
-
-    affected_blocks = []
-    find_affected_nodes(root_node, changed_lines, affected_blocks)
+            find_comment_code_pairs(child, changed_lines)
+    find_comment_code_pairs(root_node, changed_lines)
 
     # Flatten blocks into strings
-    pruned_code = "\n".join("\n".join(block) for block in affected_blocks)
-    return pruned_code
+
+    with open("test.md", mode="w", encoding="utf-8") as f:
+        f.write("## Old Content")
+        f.write(old_content)
+        f.write("## New Content")
+        f.write(new_content)
+        f.write("## Pruned")
+        for comment, code in comment_code_pairs:
+            f.write(f"Code: {code}, Comment: {comment}")
+    
+    return comment_code_pairs
 
 
 
