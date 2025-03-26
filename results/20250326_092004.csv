@@ -1,0 +1,5 @@
+Semantic-Score,Code,Original-Comment,Agent-Comment,Filename,Agent-Commit
+0.23996401,"res = mul(res,a)",#Test comment,# Repeatedly multiplies the result by 'a' to get the factorial,src/main.py,8a88d80a4a8ec3e2b09414a5076e6af06afe9684
+0.23996423,"res = mul(res,a)",#Test comment,# Repeatedly multiplies the result by 'a' to get the factorial,src/main.py,aa13ce3974d74550ba2cd992daf877866f5ada0e
+0.24186644,"print(""Test print"")",#Here we print something,# Subtracts one number from another,src/main.py,aa13ce3974d74550ba2cd992daf877866f5ada0e
+0.34225923,"new_balance = sub(balance, price)",#Update balance to reflect payment,# Subtracts the price of a pizza from the balance,src/main.py,aa13ce3974d74550ba2cd992daf877866f5ada0e

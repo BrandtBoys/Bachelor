@@ -20,7 +20,7 @@ load_dotenv()
 
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
-REPO_NAME = "flask-fork"  # Change this
+REPO_NAME = "Bachelor"  # Change this
 WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
@@ -33,8 +33,8 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
-start = 15  # what index of commit the test should start from
-end = 0  # what index of commit the test should end at
+start = 20  # what index of commit the test should start from
+end = 16  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()
@@ -213,6 +213,9 @@ def add_commit_run_agent(commit_sha):
                     comment_pairs.append([orgComment, agComment])
                     comment_metedata.append([orgCode, filename, agent_HEAD_commit])
 
+    if not comment_pairs:
+        return
+
     scores = calculate_semantic_scores(comment_pairs)
 
     for score, (orgComment, agComment), (code, filename, commit) in zip(scores, comment_pairs, comment_metedata):
@@ -293,7 +296,6 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
     # Extract changed line numbers
     changed_lines = set()
     for line in diff:
-        print(line)
         if line.startswith("@@"):
             parts = line.split(" ")
             new_range = parts[2]  # like +12,3
@@ -301,9 +303,6 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
             line_count = int(new_range.split(",")[1]) if "," in new_range else 1
             for i in range(start_line, start_line + line_count):
                 changed_lines.add(i)
-
-    print(changed_lines)
-    print(new_content)
 
     # Tree-sitter parsing
     parser = Parser()
