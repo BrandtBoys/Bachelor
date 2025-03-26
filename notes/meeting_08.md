@@ -8,3 +8,42 @@
     - takeaways:
     - "automation is seen as a practical approach to increasing productivity and quality."
     - We want to use this to show how our approach differs from the more popular approach of integrating documentation assistance in IDEs, like co-pilot, and why this is not an automated workflow.
+
+## Notes from meeting
+- 3rd party. Always good to have a sound rational for why you do something. Don't write if you don't know. But always good to have a sentence for the why. Not all libraries, but just explain for what is relevant for our project. Langchain f.eks. would probably be good to explain. 
+
+- If the paper has relevance for our project, there is no aging. 
+- If you cite any paper, then it means that it is fair game that you should have an understanding of what is discussed in there. They will ask at the exam, and it would be bad if you simple could answer "i dont remmeber". -> Dont Cite stuff just to have stuff to cite.
+
+- Not problem with preliminary, but you can see if there is a follow up paper released. And just present it as what it is, a preliminary study with preliminary findings. 
+  - Check what she has published afterwards. -> Paolo says it probably is a phd student. Look into Hadar
+
+### Background and related work
+- You should always have a related work section, no matter what.
+- Background you can decide.
+
+Related work:
+  - People who have done related to yours. Who worked with automating documentation. Or similar.
+  - Survey showing that documentation is usable.
+  - Your job with this is for example look at other papers who have looked at llm for documentation, and then explain how we allign with that or build upon that.
+
+Background:
+- Knowledge that the reader of our thesis need to know to understand our thesis.
+  - E.g. maybe the levels of documentation that we need in our thesis. If there is a paper that have described the categorisation that we use then this would be background.
+  - Knowledge about LLM and agents is background. Not motivate. -> Motivation is not background. Background is "what is a LLM agent". The "why use an llm agent" that is in another section .-> Probably design section.
+
+In design section you can say stuff like "following the process described here" we have embedded the LLM in our agent.
+
+Should we include steps, or just end product.
+
+Building a toolbox for working with psycological safety. -> Look at this for structure.
+- Different cycles. 
+E.g.
+- Proof of concept
+- Then embed
+- Evaluating
+
+
+So look at the project we have done, not just a product. 
+
+
