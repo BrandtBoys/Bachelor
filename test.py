@@ -1,4 +1,5 @@
 import csv
+from itertools import islice
 import json
 import re
 from dotenv import load_dotenv
@@ -20,7 +21,7 @@ load_dotenv()
 
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
-REPO_NAME = "Bachelor"  # Change this
+REPO_NAME = "flask-fork"  # Change this
 WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
@@ -28,22 +29,27 @@ GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 branch_name = f"test-agent-{uuid.uuid4()}"
 #instantiate github auth
 g = github.Github(login_or_token=GITHUB_TOKEN)
+print("github")
 
 #get repo
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
+print("repo")
 
 # Commits to compare (replace or allow user input)
-start = 20  # what index of commit the test should start from
-end = 16  # what index of commit the test should end at
+start = 40  # what index of commit the test should start from
+end =30  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()
 
 #the list of all commits from a given branch, where index 0 is HEAD
-commits = list(repo.get_commits(sha="main")) 
+# commits = list(repo.get_commits(sha="main"))[end:start+1]
+commits = list(islice(repo.get_commits(sha="main"), end, start))
+print("commits")
 
 #Branch out to test env, from the specified commit you want to start the test from
-repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
+repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[-1].sha)
+print("create branch")
 branch = repo.get_branch(branch_name)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -63,14 +69,18 @@ def main():
         agent_code = f.read()
         update_file("agent.py", agent_code)
 
+    #Make a requirements file for th dependencies the workflow needs
+    with open ("workflow_requirements.txt", "r") as f:
+        workflow_requirements = f.read()
+        update_file("workflow_requirements.txt", workflow_requirements)
+
     #read content of the workflow, and add it into the test environment
     with open (".github/workflows/update_docs.yml","r") as f:
         workflow_code = f.read()
         update_file(".github/workflows/update_docs.yml",workflow_code)
-    print(workflow_code)
     
     #add loop of commits
-    for commit in reversed(commits[end:start]):
+    for commit in reversed(commits):
         print(commit)
         add_commit_run_agent(commit.sha)
     
@@ -177,17 +187,17 @@ def add_commit_run_agent(commit_sha):
         #add modified files to list
         modified_files.append((file.filename, modified_file_str))
 
-    commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments.")
-    workflow = repo.get_workflow(WORKFLOW_NAME)
-    workflow.create_dispatch(ref=branch_name)
-    time.sleep(5)
+    if commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments."):
+        workflow = repo.get_workflow(WORKFLOW_NAME)
+        workflow.create_dispatch(ref=branch_name)
+        time.sleep(5)
 
-    # wait to see when the action is finished, before moving on.
-    run = workflow.get_runs()[0]
-    while run.status not in ["completed"]:
-        print(f"Workflow running... (current status: {run.status})")
-        time.sleep(5)  # Wait and check again
-        run = workflow.get_runs()[0]  # Refresh latest run
+        # wait to see when the action is finished, before moving on.
+        run = workflow.get_runs()[0]
+        while run.status not in ["completed"]:
+            print(f"Workflow running... (current status: {run.status})")
+            time.sleep(5)  # Wait and check again
+            run = workflow.get_runs()[0]  # Refresh latest run
 
     #fetch the latest changes to the test branch
     branch = repo.get_branch(branch_name)
@@ -230,7 +240,7 @@ def add_commit_run_agent(commit_sha):
 def commit_multiple_files(ref, files, last_commit, commit_message):
     if not files:
         print("No file-changes to commit")
-        return
+        return False
     # Create blobs for each file (this uploads the content to GitHub)
     blobs = []
     for path, content in files:
@@ -249,6 +259,7 @@ def commit_multiple_files(ref, files, last_commit, commit_message):
 
     #Move the branch pointer to the new commit
     ref.edit(new_commit.sha)
+    return True
 
 def update_file(file_name, content):
     try:
@@ -330,7 +341,6 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
             code_text = new_content[node.start_byte:node.end_byte].strip()
             
             if comments:
-                print(comments)
                 combined_comment = "\n".join(c[0] for c in comments)
                 clean_code_text = remove_comments.remove_comments(file_language, code_text.encode("utf-8")).decode("utf-8")
                 comment_code_pairs.append((combined_comment, clean_code_text))
