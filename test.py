@@ -50,6 +50,10 @@ def main():
         agent_code = f.read()
         update_file("agent.py", agent_code)
 
+    with open ("workflow_requirements.txt","r") as f:
+        workflow_requirements = f.read()
+        update_file("workflow_requirements.txt",workflow_requirements)
+
     #read content of the workflow, and add it into the test environment
     with open (".github/workflows/update_docs.yml","r") as f:
         workflow_code = f.read()
