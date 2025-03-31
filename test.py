@@ -1,3 +1,4 @@
+from itertools import islice
 import json
 import re
 from dotenv import load_dotenv
@@ -16,7 +17,7 @@ load_dotenv()
 
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
-REPO_NAME = "Bachelor"  # Change this
+REPO_NAME = "flask-fork"  # Change this
 WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
@@ -30,17 +31,17 @@ g = github.Github(login_or_token=GITHUB_TOKEN)
 repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 
 # Commits to compare (replace or allow user input)
-start = 3  # what index of commit the test should start from
-end = 0  # what index of commit the test should end at
+start = 35  # what index of commit the test should start from
+end =33  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()
 
 #the list of all commits from a given branch, where index 0 is HEAD
-commits = list(repo.get_commits(sha="main")) 
+commits = list(islice(repo.get_commits(sha="main"), end, start))
 
 #Branch out to test env, from the specified commit you want to start the test from
-repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
+repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[-1].sha)
 branch = repo.get_branch(branch_name)
 
 def main():
@@ -60,7 +61,7 @@ def main():
         update_file(".github/workflows/update_docs.yml",workflow_code)
     
     #add loop of commits
-    for commit in reversed(commits[end:start]):
+    for commit in reversed(commits):
         print(commit)
         add_commit_run_agent(commit.sha)
     
@@ -72,39 +73,39 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Define the base results directory
-    results_dir = os.path.join("results", timestamp)
-    os.makedirs(results_dir, exist_ok=True)
+    # results_dir = os.path.join("results", timestamp)
+    # os.makedirs(results_dir, exist_ok=True)
 
     #given source code, pairs of code and their associated comments are saved in list
-    for file in modified_filepaths:
-        # make folder to store results in
-        file_dir = os.path.join(results_dir, file)
-        os.makedirs(file_dir, exist_ok=True)
+    # for file in modified_filepaths:
+    #     # make folder to store results in
+    #     file_dir = os.path.join(results_dir, file)
+    #     os.makedirs(file_dir, exist_ok=True)
 
-        file_language = detect_language.detect_language(file)
-        if not file_language:
-            continue
-        agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
-        agent_comment_code_pairs = extract_from_content(agent_content, file_language)
+    #     file_language = detect_language.detect_language(file)
+    #     if not file_language:
+    #         continue
+    #     agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
+    #     agent_comment_code_pairs = extract_from_content(agent_content, file_language)
 
-        # extract only the file name, not folders and format.
-        file_name = re.sub(r".*/|\.py$", "", file)
+    #     # extract only the file name, not folders and format.
+    #     file_name = re.sub(r".*/|\.py$", "", file)
 
-        # Define JSON file path
-        agent_json_file_path = os.path.join(file_dir, f"agent_{file_name}.json")
+    #     # Define JSON file path
+    #     agent_json_file_path = os.path.join(file_dir, f"agent_{file_name}.json")
 
-        # Save extracted data to JSON
-        with open(agent_json_file_path, "w", encoding="utf-8") as f:
-            json.dump(agent_comment_code_pairs, f, indent=4)
+    #     # Save extracted data to JSON
+    #     with open(agent_json_file_path, "w", encoding="utf-8") as f:
+    #         json.dump(agent_comment_code_pairs, f, indent=4)
 
-        original_content = repo.get_contents(file,ref=commits[0].sha)
-        original_comment_code_pairs = extract_from_content(original_content, file_language)
+    #     original_content = repo.get_contents(file,ref=commits[0].sha)
+    #     original_comment_code_pairs = extract_from_content(original_content, file_language)
 
-        original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
+    #     original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
 
-        # Save extracted data to JSON
-        with open(original_json_file_path, "w", encoding="utf-8") as f:
-            json.dump(original_comment_code_pairs, f, indent=4)
+    #     # Save extracted data to JSON
+    #     with open(original_json_file_path, "w", encoding="utf-8") as f:
+    #         json.dump(original_comment_code_pairs, f, indent=4)
 
 
 
@@ -161,22 +162,21 @@ def add_commit_run_agent(commit_sha):
         #add modified files to list
         modified_files.append((file.filename, modified_file_str))
 
-    commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments.")
-    workflow = repo.get_workflow(WORKFLOW_NAME)
-    workflow.create_dispatch(ref=branch_name)
-    time.sleep(5)
+    if commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments."):
+        workflow = repo.get_workflow(WORKFLOW_NAME)
+        workflow.create_dispatch(ref=branch_name)
+        time.sleep(5)
 
-    # wait to see when the action is finished, before moving on.
-    run = workflow.get_runs()[0]
-    while run.status not in ["completed"]:
-        print(f"Workflow running... (current status: {run.status})")
-        time.sleep(5)  # Wait and check again
-        run = workflow.get_runs()[0]  # Refresh latest run
+        # wait to see when the action is finished, before moving on.
+        run = workflow.get_runs()[0]
+        while run.status not in ["completed"]:
+            time.sleep(5)  # Wait and check again
+            run = workflow.get_runs()[0]  # Refresh latest run
 
 def commit_multiple_files(ref, files, last_commit, commit_message):
     if not files:
         print("No file-changes to commit")
-        return
+        return False
     # Create blobs for each file (this uploads the content to GitHub)
     blobs = []
     for path, content in files:
@@ -195,6 +195,7 @@ def commit_multiple_files(ref, files, last_commit, commit_message):
 
     #Move the branch pointer to the new commit
     ref.edit(new_commit.sha)
+    return True
 
 def update_file(file_name, content):
     try:
