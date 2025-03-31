@@ -84,52 +84,6 @@ def main():
         print(commit)
         add_commit_run_agent(commit.sha)
     
-    # #fetch the latest changes to the test branch
-    # branch = repo.get_branch(branch_name)
-    # #fetch the HEAD commit of test branch
-    # agent_HEAD_commit = branch.commit.sha
-
-    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # # Define the base results directory
-    # result_file = os.path.join("results", f"{timestamp}.csv")
-    # with open(result_file, mode="w", newline="", encoding="utf-8") as f:
-    #     header = ["Semantic-Score", "Code", "Original-Comment", "Filename","Agent-Comment"]
-    #     writer = csv.writer(f)
-    #     writer.writerow(header)
-
-    # #given source code, pairs of code and their associated comments are saved in list
-    # for file in modified_filepaths:
-    #     # make folder to store results in
-    #     file_dir = os.path.join(results_dir, file)
-    #     os.makedirs(file_dir, exist_ok=True)
-
-    #     file_language = detect_language.detect_language(file)
-    #     if not file_language:
-    #         continue
-    #     agent_content = repo.get_contents(file,ref=agent_HEAD_commit)
-    #     agent_comment_code_pairs = extract_from_content(agent_content, file_language)
-
-        # # extract only the file name, not folders and format.
-        # file_name = re.sub(r".*/|\.py$", "", file)
-
-        # # Define JSON file path
-        # agent_json_file_path = os.path.join(file_dir, f"agent_{file_name}.json")
-
-        # # Save extracted data to JSON
-        # with open(agent_json_file_path, "w", encoding="utf-8") as f:
-        #     json.dump(agent_comment_code_pairs, f, indent=4)
-
-        # original_content = repo.get_contents(file,ref=commits[0].sha)
-        # original_comment_code_pairs = extract_from_content(original_content, file_language)
-
-        # original_json_file_path = os.path.join(file_dir, f"original_{file_name}.json")
-
-        # # Save extracted data to JSON
-        # with open(original_json_file_path, "w", encoding="utf-8") as f:
-        #     json.dump(original_comment_code_pairs, f, indent=4)
-
-
 
 def add_commit_run_agent(commit_sha):
     branch = repo.get_branch(branch_name)
