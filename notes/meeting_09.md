@@ -5,7 +5,7 @@
     - is it appropriate to have a name for the product, for clarity reasons?
 - How are we doing in the process
     - Our test setup framework is done - It works with public repo like flask
-    - we believe to have the source for the background and related work sections
+    - we believe to have the sources for the background and related work sections
     - Should we have research questions?
 - Next steps
     - Improve on the LLM agent
