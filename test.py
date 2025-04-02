@@ -21,7 +21,7 @@ load_dotenv()
 
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
-REPO_NAME = "flask-fork"  # Change this
+REPO_NAME = "bachelor"  # Change this
 WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
@@ -36,14 +36,13 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 print("repo")
 
 # Commits to compare (replace or allow user input)
-start = 40  # what index of commit the test should start from
-end =30  # what index of commit the test should end at
+start = 40  # what index of commit the test should start from, have to be higher than "end"
+end = 30  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()
 
 #the list of all commits from a given branch, where index 0 is HEAD
-# commits = list(repo.get_commits(sha="main"))[end:start+1]
 commits = list(islice(repo.get_commits(sha="main"), end, start))
 print("commits")
 
