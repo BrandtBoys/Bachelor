@@ -21,7 +21,7 @@ load_dotenv()
 
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
-REPO_NAME = "Bachelor"  # Change this
+REPO_NAME = "flask-fork"  # Change this
 WORKFLOW_NAME = "update_docs.yml"  # Change if different
 GITHUB_TOKEN = os.getenv("GITHUB_PAT")  # Use a Personal Access Token
 
@@ -36,8 +36,8 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 print("repo")
 
 # Commits to compare (replace or allow user input)
-start = 2  # what index of commit the test should start from, have to be higher than "end"
-end = 0  # what index of commit the test should end at
+start = 36  # what index of commit the test should start from, have to be higher than "end"
+end = 32  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()
@@ -67,6 +67,10 @@ def main():
     with open ("agent.py", "r") as f:
         agent_code = f.read()
         update_file("agent.py", agent_code)
+
+    with open ("detect_language.py", "r") as f:
+        detect_language_code = f.read()
+        update_file("detect_language.py", detect_language_code)
 
     #Make a requirements file for th dependencies the workflow needs
     with open ("workflow_requirements.txt", "r") as f:
@@ -148,7 +152,6 @@ def add_commit_run_agent(commit_sha):
         # wait to see when the action is finished, before moving on.
         run = workflow.get_runs()[0]
         while run.status not in ["completed"]:
-            print(f"Workflow running... (current status: {run.status})")
             time.sleep(5)  # Wait and check again
             run = workflow.get_runs()[0]  # Refresh latest run
 
@@ -165,11 +168,12 @@ def add_commit_run_agent(commit_sha):
         file_language = detect_language.detect_language(filename) 
         if not file_language:
             continue
-        original_content = repo.get_contents(filename,ref=commit_sha)
+        original_content = repo.get_contents(filename,ref=commit_sha) # original commit
         original_comment_code_pairs = extract_from_content(original_content, file_language)
 
         agent_comment_code_pairs = get_agent_diff_content(repo, filename, agent_HEAD_commit, file_language)
 
+        # collects pairs of comments_code_pairs from original and agent, where the code is identical and save the comments if the comments differs
         for agComment, agCode in agent_comment_code_pairs:
             for orgComment, orgCode in original_comment_code_pairs:
                 if orgCode.strip() == agCode.strip() and orgComment.strip() != agComment.strip():
@@ -245,11 +249,12 @@ def calculate_semantic_scores(commentPairs):
     scores = model.predict(commentPairs)
     return scores
 
+# Returns comment code pairs created by the agent in the *last* commit
 def get_agent_diff_content(repo, filename, commit_sha, file_language):
     # Get commits and file contents
     commit = repo.get_commit(sha=commit_sha)
-    old_content = repo.get_contents(filename, ref=commit.parents[0].sha).decoded_content.decode()
-    new_content = repo.get_contents(filename, ref=commit.sha).decoded_content.decode()
+    old_content = repo.get_contents(filename, ref=commit.parents[0].sha).decoded_content.decode() # test commit
+    new_content = repo.get_contents(filename, ref=commit.sha).decoded_content.decode() # agent commit
 
 
     # Generate diff
