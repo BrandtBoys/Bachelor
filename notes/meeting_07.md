@@ -68,9 +68,3 @@ Hvis ikke vi for semantisk analyse til at virke, så kan det være at vi skal br
     - map litteratur til vores test score
 - add on/ diskuter - trust score
 - bench marking
-
-
-
-Til paolo!
-- Når vi bruger 3rd party libraries, hvordan håndtere vi det i vores akademiske projekt
-- Skal vi beskrive dem? Hvor meget? Skal vi være skeptiske, vurdere deres brug osv.

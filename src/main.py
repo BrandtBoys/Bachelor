@@ -39,6 +39,15 @@ def buyPizza(price, balance):
         return pizza
     else:
         return None
+    
+#Prints the identity of the user    
+def printIdentity(user):
+    if user.name != null:
+        print(f"I am: {user.name}")
+    else:
+        #If user.name is not valid, print information about the user being unknown
+        print("I am unknown!")
+
 
 
 
