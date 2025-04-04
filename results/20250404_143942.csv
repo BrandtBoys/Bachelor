@@ -57,3 +57,263 @@ Semantic-Score,Code,Original-Comment,Agent-Comment,Filename,Agent-Commit
         args = args[0]
     return current_app.make_response(args)",# type: ignore[return-value],"# This function creates a response object that can be used to add headers,
 # similar to how Flask views would work but with more control over the response.",src/flask/helpers.py,9b31f07e3abf300a8faa69860b6c56087ca1a101
+0.082261525,"def get_send_file_max_age(self, filename: str | None) -> int | None:
+        """"""Used by :func:`send_file` to determine the ``max_age`` cache
+        value for a given file path if it wasn't passed.
+
+        By default, this returns :data:`SEND_FILE_MAX_AGE_DEFAULT` from
+        the configuration of :data:`~flask.current_app`. This defaults
+        to ``None``, which tells the browser to use conditional requests
+        instead of a timed cache, which is usually preferable.
+
+        Note this is a duplicate of the same method in the Flask
+        class.
+
+        .. versionchanged:: 2.0
+            The default configuration is ``None`` instead of 12 hours.
+
+        .. versionadded:: 0.9
+        """"""
+        value = current_app.config[""SEND_FILE_MAX_AGE_DEFAULT""]
+
+        if value is None:
+            return None
+
+        if isinstance(value, timedelta):
+            return int(value.total_seconds())
+
+        return value  ",# type: ignore # noqa: B950,"# Returns the maximum age for a file to be cached by the browser,
+# falling back to the default configuration from Flask's current app.",src/flask/app.py,90cb96831b9ff021edb339bf957578d905640494
+0.06730404,"def open_instance_resource(
+        self, resource: str, mode: str = ""rb"", encoding: str | None = ""utf-8""
+    ) -> t.IO[t.AnyStr]:
+        """"""Open a resource file relative to the application's instance folder
+        :attr:`instance_path`. Unlike :meth:`open_resource`, files in the
+        instance folder can be opened for writing.
+
+        :param resource: Path to the resource relative to :attr:`instance_path`.
+        :param mode: Open the file in this mode.
+        :param encoding: Open the file with this encoding when opening in text
+            mode. This is ignored when opening in binary mode.
+
+        .. versionchanged:: 3.1
+            Added the ``encoding`` parameter.
+        """"""
+        path = os.path.join(self.instance_path, resource)
+
+        if ""b"" in mode:
+            return open(path, mode)
+
+        return open(path, mode, encoding=encoding)",# pyright: ignore,# Open a resource file relative to the application's instance folder.,src/flask/app.py,90cb96831b9ff021edb339bf957578d905640494
+0.26697364,"def raise_routing_exception(self, request: Request) -> t.NoReturn:
+        """"""Intercept routing exceptions and possibly do something else.
+
+        In debug mode, intercept a routing redirect and replace it with
+        an error if the body will be discarded.
+
+        With modern Werkzeug this shouldn't occur, since it now uses a
+        308 status which tells the browser to resend the method and
+        body.
+
+        .. versionchanged:: 2.1
+            Don't intercept 307 and 308 redirects.
+
+        :meta private:
+        :internal:
+        """"""
+        if (
+            not self.debug
+            or not isinstance(request.routing_exception, RequestRedirect)
+            or request.routing_exception.code in {307, 308}
+            or request.method in {""GET"", ""HEAD"", ""OPTIONS""}
+        ):
+            raise request.routing_exception  
+
+        from .debughelpers import FormDataRoutingRedirect
+
+        raise FormDataRoutingRedirect(request)","# We need at the very least the server name to be set for this
+# to work.","# Intercept routing exceptions and possibly do something else. In debug mode,
+# intercept a routing redirect and replace it with an error if the body will be discarded.",src/flask/app.py,90cb96831b9ff021edb339bf957578d905640494
+0.101595275,"def group(  
+        self, *args: t.Any, **kwargs: t.Any
+    ) -> t.Callable[[t.Callable[..., t.Any]], click.Group]:
+        """"""This works exactly like the method of the same name on a regular
+        :class:`click.Group` but it defaults the group class to
+        :class:`AppGroup`.
+        """"""
+        kwargs.setdefault(""cls"", AppGroup)
+        return super().group(*args, **kwargs)  ",# type: ignore[no-any-return],# This function creates a custom click Group with default class set to AppGroup.,src/flask/cli.py,90cb96831b9ff021edb339bf957578d905640494
+0.33997613,"def _set_app(ctx: click.Context, param: click.Option, value: str | None) -> str | None:
+    if value is None:
+        return None
+
+    info = ctx.ensure_object(ScriptInfo)
+    info.app_import_path = value
+    return value",# type: ignore[no-any-return],"# This function sets the application import path for a given script, returning the updated path or None if no value was provided.",src/flask/cli.py,90cb96831b9ff021edb339bf957578d905640494
+0.036462564,"def __set__(self, obj: App, value: t.Any) -> None:
+        obj.config[self.__name__] = value",# type: ignore[no-any-return],# Sets the configuration value for the current object instance.,src/flask/config.py,90cb96831b9ff021edb339bf957578d905640494
+0.37705848,"def make_response(*args: t.Any) -> Response:
+    """"""Sometimes it is necessary to set additional headers in a view.  Because
+    views do not have to return response objects but can return a value that
+    is converted into a response object by Flask itself, it becomes tricky to
+    add headers to it.  This function can be called instead of using a return
+    and you will get a response object which you can use to attach headers.
+
+    If view looked like this and you want to add a new header::
+
+        def index():
+            return render_template('index.html', foo=42)
+
+    You can now do something like this::
+
+        def index():
+            response = make_response(render_template('index.html', foo=42))
+            response.headers['X-Parachutes'] = 'parachutes are cool'
+            return response
+
+    This function accepts the very same arguments you can return from a
+    view function.  This for example creates a response with a 404 error
+    code::
+
+        response = make_response(render_template('not_found.html'), 404)
+
+    The other use case of this function is to force the return value of a
+    view function into a response which is helpful with view
+    decorators::
+
+        response = make_response(view_function())
+        response.headers['X-Parachutes'] = 'parachutes are cool'
+
+    Internally this function does the following things:
+
+    -   if no arguments are passed, it creates a new response argument
+    -   if one argument is passed, :meth:`flask.Flask.make_response`
+        is invoked with it.
+    -   if more than one argument is passed, the arguments are passed
+        to the :meth:`flask.Flask.make_response` function as tuple.
+
+    .. versionadded:: 0.6
+    """"""
+    if not args:
+        return current_app.response_class()
+    if len(args) == 1:
+        args = args[0]
+    return current_app.make_response(args)",# type: ignore[return-value],"# This function creates a response object that can be used to add headers,
+# allowing for more flexibility in view functions when returning values instead of responses.",src/flask/helpers.py,90cb96831b9ff021edb339bf957578d905640494
+0.23858911,"def get_cookie_domain(self, app: Flask) -> str | None:
+        """"""The value of the ``Domain`` parameter on the session cookie. If not set,
+        browsers will only send the cookie to the exact domain it was set from.
+        Otherwise, they will send it to any subdomain of the given value as well.
+
+        Uses the :data:`SESSION_COOKIE_DOMAIN` config.
+
+        .. versionchanged:: 2.3
+            Not set by default, does not fall back to ``SERVER_NAME``.
+        """"""
+        return app.config[""SESSION_COOKIE_DOMAIN""]  ",# type: ignore[no-any-return],"# The function returns the value of the Domain parameter on the session cookie,
+# which determines whether cookies are sent to a specific domain or all subdomains.",src/flask/sessions.py,90cb96831b9ff021edb339bf957578d905640494
+0.24760523,"def get_cookie_path(self, app: Flask) -> str:
+        """"""Returns the path for which the cookie should be valid.  The
+        default implementation uses the value from the ``SESSION_COOKIE_PATH``
+        config var if it's set, and falls back to ``APPLICATION_ROOT`` or
+        uses ``/`` if it's ``None``.
+        """"""
+        return app.config[""SESSION_COOKIE_PATH""] or app.config[""APPLICATION_ROOT""]  ",# type: ignore[no-any-return],"# Returns the path for which the cookie should be valid, falling back to APPLICATION_ROOT or using / if SESSION_COOKIE_PATH is None.",src/flask/sessions.py,90cb96831b9ff021edb339bf957578d905640494
+0.23013912,"def get_cookie_httponly(self, app: Flask) -> bool:
+        """"""Returns True if the session cookie should be httponly.  This
+        currently just returns the value of the ``SESSION_COOKIE_HTTPONLY``
+        config var.
+        """"""
+        return app.config[""SESSION_COOKIE_HTTPONLY""]  ",# type: ignore[no-any-return],# Returns whether the session cookie should be marked as httponly based on the SESSION_COOKIE_HTTPONLY configuration variable.,src/flask/sessions.py,90cb96831b9ff021edb339bf957578d905640494
+0.19433282,"def get_cookie_samesite(self, app: Flask) -> str | None:
+        """"""Return ``'Strict'`` or ``'Lax'`` if the cookie should use the
+        ``SameSite`` attribute. This currently just returns the value of
+        the :data:`SESSION_COOKIE_SAMESITE` setting.
+        """"""
+        return app.config[""SESSION_COOKIE_SAMESITE""]  ",# type: ignore[no-any-return],"# Returns the SameSite attribute for a given cookie, either 'Strict' or 'Lax', based on the SESSION_COOKIE_SAMESITE configuration.",src/flask/sessions.py,90cb96831b9ff021edb339bf957578d905640494
+0.25368637,"def get_cookie_partitioned(self, app: Flask) -> bool:
+        """"""Returns True if the cookie should be partitioned. By default, uses
+        the value of :data:`SESSION_COOKIE_PARTITIONED`.
+
+        .. versionadded:: 3.1
+        """"""
+        return app.config[""SESSION_COOKIE_PARTITIONED""]  ",# type: ignore[no-any-return],# Returns whether the cookie should be partitioned based on the configuration setting SESSION_COOKIE_PARTITIONED,src/flask/sessions.py,90cb96831b9ff021edb339bf957578d905640494
+0.47418058,"def get_expiration_time(self, app: Flask, session: SessionMixin) -> datetime | None:
+        """"""A helper method that returns an expiration date for the session
+        or ``None`` if the session is linked to the browser session.  The
+        default implementation returns now + the permanent session
+        lifetime configured on the application.
+        """"""
+        if session.permanent:
+            return datetime.now(timezone.utc) + app.permanent_session_lifetime
+        return None",# type: ignore[no-any-return],# A helper method that returns an expiration date for the session or None if linked to browser session.,src/flask/sessions.py,90cb96831b9ff021edb339bf957578d905640494
+0.035128497,"def max_content_length(self, value: int | None) -> None:
+        self._max_content_length = value",# type: ignore[no-any-return],# The function sets the maximum allowed content length for an object.,src/flask/wrappers.py,90cb96831b9ff021edb339bf957578d905640494
+0.19049071,"def max_form_memory_size(self, value: int | None) -> None:
+        self._max_form_memory_size = value",# type: ignore[no-any-return],# This function sets and returns the maximum form memory size.,src/flask/wrappers.py,90cb96831b9ff021edb339bf957578d905640494
+0.03197388,"def max_form_parts(self) -> int | None:
+        """"""The maximum number of fields that may be present in a
+        ``multipart/form-data`` body. If this limit is exceeded, a 413
+        :exc:`~werkzeug.exceptions.RequestEntityTooLarge` error is raised. If it
+        is set to ``None``, no limit is enforced at the Flask application level.
+
+        Each request defaults to the :data:`MAX_FORM_PARTS` config, which
+        defaults to ``1_000``. It can be set on a specific ``request`` to apply
+        the limit to that specific view. This should be set appropriately based
+        on an application's or view's specific needs.
+
+        .. versionchanged:: 3.1
+            This is configurable through Flask config.
+        """"""
+        if self._max_form_parts is not None:
+            return self._max_form_parts
+
+        if not current_app:
+            return super().max_form_parts
+
+        return current_app.config[""MAX_FORM_PARTS""]  ",# type: ignore[override],# The maximum number of fields that may be present in a multipart/form-data body.,src/flask/wrappers.py,90cb96831b9ff021edb339bf957578d905640494
+0.17361958,"def max_form_parts(self, value: int | None) -> None:
+        self._max_form_parts = value",# type: ignore[no-any-return],# Returns the maximum number of form parts that can be created with a given total value.,src/flask/wrappers.py,90cb96831b9ff021edb339bf957578d905640494
+0.39850393,"def blueprint(self) -> str | None:
+        """"""The registered name of the current blueprint.
+
+        This will be ``None`` if the endpoint is not part of a
+        blueprint, or if URL matching failed or has not been performed
+        yet.
+
+        This does not necessarily match the name the blueprint was
+        created with. It may have been nested, or registered with a
+        different name.
+        """"""
+        endpoint = self.endpoint
+
+        if endpoint is not None and ""."" in endpoint:
+            return endpoint.rpartition(""."")[0]
+
+        return None",# type: ignore[no-any-return],"# The blueprint function returns the registered name of the current blueprint, or None if it's not part of a blueprint.",src/flask/wrappers.py,90cb96831b9ff021edb339bf957578d905640494
+0.23262091,"def test_session_using_samesite_attribute(app, client):
+    @app.route(""/"")
+    def index():
+        flask.session[""testing""] = 42
+        return ""Hello World""
+
+    app.config.update(SESSION_COOKIE_SAMESITE=""invalid"")
+
+    with pytest.raises(ValueError):
+        client.get(""/"")
+
+    app.config.update(SESSION_COOKIE_SAMESITE=None)
+    rv = client.get(""/"")
+    cookie = rv.headers[""set-cookie""].lower()
+    assert ""samesite"" not in cookie
+
+    app.config.update(SESSION_COOKIE_SAMESITE=""Strict"")
+    rv = client.get(""/"")
+    cookie = rv.headers[""set-cookie""].lower()
+    assert ""samesite=strict"" in cookie
+
+    app.config.update(SESSION_COOKIE_SAMESITE=""Lax"")
+    rv = client.get(""/"")
+    cookie = rv.headers[""set-cookie""].lower()
+    assert ""samesite=lax"" in cookie",# or condition for Werkzeug < 2.3,"# This function tests the functionality of Flask's session cookie with the Samesite attribute,
+# verifying that it correctly sets and retrieves the attribute based on its value.",tests/test_basic.py,90cb96831b9ff021edb339bf957578d905640494
