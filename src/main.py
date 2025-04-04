@@ -1,10 +1,10 @@
-def mul(a,b):
+# Returns the product of two numbers.def mul(a,b):
   #Return the multiple of a and b.
     
     return a*b
 
 
-def calculate(a):
+# Calculate the factorial of a given number 'a' by multiplying all numbers from 'a' down to 1.def calculate(a):
     res = 1
   #Multiple a with a-1 recursively as long as a is greater than 0.
     
@@ -13,7 +13,7 @@ def calculate(a):
         a = a -1
     return res
 
-def sub(a,b):
+# This function takes two arguments, subtracts b from a and returns the result.def sub(a,b):
   #This print is just a test print
     
     print("Test print")
@@ -28,7 +28,7 @@ def not_enough_balance_to_do_stuff(balance, amount):
     print(amount) 
     return not sub(balance, amount) > 0
 
-def buyPizza(price, balance):
+# Update user's balance by subtracting the cost of a pizza and return the purchased pizza details if sufficient funds are available.def buyPizza(price, balance):
   #Update balance to reflect payment
     
     new_balance = sub(balance, price)

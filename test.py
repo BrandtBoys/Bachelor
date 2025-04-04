@@ -43,7 +43,10 @@ commits = list(repo.get_commits(sha="main"))
 repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
 branch = repo.get_branch(branch_name)
 
-def main():
+```python
+# Reads and updates agent, workflow requirements, and test environment files,
+# generates commit runs for each modified file, and saves comment code pairs to JSON files.
+```def main():
 
   #read the content of the agent, and add it into the test environment
     
@@ -112,7 +115,10 @@ def main():
 
 
 
-def add_commit_run_agent(commit_sha):
+```python
+# This function adds a commit run agent for a given commit SHA. It compares the code changes between two commits,
+# removes comments from modified files, and then replicates the commit without comments using a GitHub Actions workflow.
+```def add_commit_run_agent(commit_sha):
     branch = repo.get_branch(branch_name)
     ref = repo.get_git_ref(f'heads/{branch_name}')
   #Get the HEAD commit of test branch
@@ -194,7 +200,7 @@ def add_commit_run_agent(commit_sha):
   #fetch the latest changes to the test branch
   #fetch the HEAD commit of test branch
 
-def commit_multiple_files(ref, files, last_commit, commit_message):
+# Create a new Git commit with multiple files by creating blobs and a tree, then updating the branch reference.def commit_multiple_files(ref, files, last_commit, commit_message):
     if not files:
         print("No file-changes to commit")
         return
@@ -220,7 +226,7 @@ def commit_multiple_files(ref, files, last_commit, commit_message):
     
     ref.edit(new_commit.sha)
 
-def update_file(file_name, content):
+# Update a file in a Git repository, either by updating an existing file or creating a new one if it doesn't exist.def update_file(file_name, content):
     try:
       # Check if file exists in the branch
         
