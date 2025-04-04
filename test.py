@@ -43,29 +43,26 @@ commits = list(repo.get_commits(sha="main"))
 repo.create_git_ref(ref='refs/heads/' + branch_name, sha=commits[start].sha)
 branch = repo.get_branch(branch_name)
 
-```python
-# Reads and updates agent, workflow requirements, and test environment files,
-# generates commit runs for each modified file, and saves comment code pairs to JSON files.
-```def main():
+def main():
 
-  #read the content of the agent, and add it into the test environment
+#read the content of the agent, and add it into the test environment
     
     with open ("agent.py", "r") as f:
         agent_code = f.read()
         update_file("agent.py", agent_code)
 
-  #Make a requirements file for th dependencies the workflow needs
+#Make a requirements file for th dependencies the workflow needs
     with open ("workflow_requirements.txt","r") as f:
         workflow_requirements = f.read()
         update_file("workflow_requirements.txt",workflow_requirements)
 
-  #read content of the workflow, and add it into the test environment
+#read content of the workflow, and add it into the test environment
     
     with open (".github/workflows/update_docs.yml","r") as f:
         workflow_code = f.read()
         update_file(".github/workflows/update_docs.yml",workflow_code)
     
-  #add loop of commits
+#add loop of commits
     
     for commit in reversed(commits[end:start]):
         print(commit)
@@ -115,17 +112,14 @@ branch = repo.get_branch(branch_name)
 
 
 
-```python
-# This function adds a commit run agent for a given commit SHA. It compares the code changes between two commits,
-# removes comments from modified files, and then replicates the commit without comments using a GitHub Actions workflow.
-```def add_commit_run_agent(commit_sha):
+def add_commit_run_agent(commit_sha):
     branch = repo.get_branch(branch_name)
     ref = repo.get_git_ref(f'heads/{branch_name}')
-  #Get the HEAD commit of test branch
+#Get the HEAD commit of test branch
     
     head_commit_sha = branch.commit.sha 
     head_commit = repo.get_git_commit(head_commit_sha)
-  #code diff between the HEAD commit and the next commit
+#code diff between the HEAD commit and the next commit
     
     diff = repo.compare(head_commit_sha,commit_sha) 
 
@@ -133,25 +127,25 @@ branch = repo.get_branch(branch_name)
 
     for file in diff.files:
         
-      #This is to fix the meta problem of handling commits that changes update_docs
-      #use helper script to detect which language the modified file is written in
+    #This is to fix the meta problem of handling commits that changes update_docs
+    #use helper script to detect which language the modified file is written in
         file_language = detect_language.detect_language(file.filename) 
         if not file_language:
             continue
-      #add the file to the set of modified files:
+    #add the file to the set of modified files:
         
         modified_filepaths.add(file.filename)
 
-      #Get the version of the modified file from the new commit
+    #Get the version of the modified file from the new commit
         
         content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
-      #use helper script to remove all comments from the modified file
+    #use helper script to remove all comments from the modified file
         
         cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
-      #get the content of the file from the current HEAD commit
+    #get the content of the file from the current HEAD commit
         
         try:
-          # Try to fetch the file from the current HEAD (test branch)
+        # Try to fetch the file from the current HEAD (test branch)
             
             head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
         except github.GithubException as e:
@@ -161,15 +155,15 @@ branch = repo.get_branch(branch_name)
             else:
                 print(e.message)
 
-      #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
-      #would remove, since the new commit holds no comments.
+    #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
+    #would remove, since the new commit holds no comments.
         
         
         differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
-      #change the generator object to a list
+    #change the generator object to a list
         
         differ_list = list(differ)
-      #the new file, with the latest code changes, but the comments from the previous state.
+    #the new file, with the latest code changes, but the comments from the previous state.
         
         modified_differ = []
         for line in differ_list:
@@ -181,7 +175,7 @@ branch = repo.get_branch(branch_name)
         modified_file = difflib.restore(modified_differ, 2)
         modified_file_str = "".join(modified_file)
         
-      #add modified files to list
+    #add modified files to list
         
         modified_files.append((file.filename, modified_file_str))
 
@@ -195,23 +189,23 @@ branch = repo.get_branch(branch_name)
     while run.status not in ["completed"]:
         print(f"Workflow running... (current status: {run.status})")
         time.sleep(5)  
-      # wait to see when the action is finished, before moving on.
+    # wait to see when the action is finished, before moving on.
         run = workflow.get_runs()[0]  
-  #fetch the latest changes to the test branch
-  #fetch the HEAD commit of test branch
+#fetch the latest changes to the test branch
+#fetch the HEAD commit of test branch
 
-# Create a new Git commit with multiple files by creating blobs and a tree, then updating the branch reference.def commit_multiple_files(ref, files, last_commit, commit_message):
+def commit_multiple_files(ref, files, last_commit, commit_message):
     if not files:
         print("No file-changes to commit")
         return
-  # Create blobs for each file (this uploads the content to GitHub)
+# Create blobs for each file (this uploads the content to GitHub)
     
     blobs = []
     for path, content in files:
         blob = repo.create_git_blob(content, "utf-8")
         blobs.append((path, blob))
 
-  # Create a tree that includes all files
+# Create a tree that includes all files
     
     tree_elements = []
     for path, blob in blobs:
@@ -222,17 +216,17 @@ branch = repo.get_branch(branch_name)
 
     new_commit = repo.create_git_commit(commit_message, new_tree, [last_commit])
 
-  #Move the branch pointer to the new commit
+#Move the branch pointer to the new commit
     
     ref.edit(new_commit.sha)
 
-# Update a file in a Git repository, either by updating an existing file or creating a new one if it doesn't exist.def update_file(file_name, content):
+def update_file(file_name, content):
     try:
-      # Check if file exists in the branch
+    # Check if file exists in the branch
         
         contents = repo.get_contents(file_name, ref=branch_name)
         
-      # If file exists, update it
+    # If file exists, update it
         
         repo.update_file(
             path=file_name,
@@ -243,7 +237,7 @@ branch = repo.get_branch(branch_name)
         )
 
     except Exception as e:
-      # If file doesn't exist, create it
+    # If file doesn't exist, create it
         
         if "404" in str(e):  
             repo.create_file(
@@ -253,14 +247,14 @@ branch = repo.get_branch(branch_name)
                 branch=branch_name
             )
         else:
-  # Get commits and file contents
-  # Generate diff
-  # Extract changed line numbers
-  # Tree-sitter parsing
-  # Find affected code blocks
-              # If the last comment is right above the current one, merge them
+# Get commits and file contents
+# Generate diff
+# Extract changed line numbers
+# Tree-sitter parsing
+# Find affected code blocks
+            # If the last comment is right above the current one, merge them
             raise  
-  # Flatten blocks into strings
+# Flatten blocks into strings
 
 if __name__ == "__main__":
     main()
