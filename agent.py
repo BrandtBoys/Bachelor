@@ -4,6 +4,10 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 import git
 import os
+import time
+from tree_sitter import Parser
+from tree_sitter_languages import get_language
+import detect_language
 
 
 repo = git.Repo(".")
@@ -25,48 +29,94 @@ diff_files = list(hcommit.diff("HEAD~1"))
 
 for file in diff_files:
     source_path = str(file.a_path)
-    #find only diff for the individual file
-    diff = repo.git.diff("HEAD~1", "HEAD",source_path)
+    file_language = detect_language.detect_language(source_path)
+    if not file_language:
+            continue
+    diff = iter(repo.git.diff("HEAD~1", "HEAD",source_path).splitlines())
 
-    # fetch docs files
     with open(source_path, "r") as f:
         source_code = f.read()
 
-    # Create prompt for LLM
-    prompt = ChatPromptTemplate.from_template(
-        """
-        You are a documentation assistant. A code change was just committed.
+    # Extract changed line numbers
+    changed_lines = set()
+    for line in diff:
+        if line.startswith("@@"):
+            parts = line.split(" ")
+            new_range = parts[2]  # like +12,3
+            start_line = int(new_range.split(",")[0][1:])
+            line_count = int(new_range.split(",")[1]) if "," in new_range else 1
+            for i in range(start_line, start_line + line_count):
+                changed_lines.add(i)
+    print(f"this is change lines for {source_path}")
+    print(changed_lines)
+    
+    # Tree-sitter parsing
+    parser = Parser()
+    language = get_language(file_language)
+    parser.set_language(language)
+    tree = parser.parse(bytes(source_code, "utf8"))
+    root_node = tree.root_node
 
-        ## Instructions:
-        - Only modify the provided `source_code` by adding inline comments to explain the functionality of the code.
-        - Focus on the lines changed in `code_diff`, but you may look a few lines above and below the changes to understand their context.
-        - Do **not** modify any code. Only add comments.
-        - The comments should explain **why** the code works the way it does, not just describe what was changed.
-        - Ensure the comments are clear, concise, and helpful.
-        - Do **not** add headers, footers, explanations, or any extra text. Only return the fully formatted `source_code` with comments added.
+    # Extract all function which is in the diff
+    code_startByte_pairs = []
+    def find_code_startByte_pairs(node, changed_lines):
+        # nonlocal code_startLine_pairs
+        if node.type in ["function_definition"]:
+            start_line = node.start_point[0] + 1
+            end_line = node.end_point[0] + 1
+            if any(line in changed_lines for line in range(start_line, end_line + 1)):
+                code = source_code[node.start_byte:node.end_byte].strip()
+                code_startByte_pairs.append(code,node.start_byte)
+        for child in node.children:
+            find_code_startByte_pairs(child, changed_lines)
+    find_code_startByte_pairs(root_node, changed_lines)
 
-        ## Code Change:
-        {code_diff}
+    print(code_startByte_pairs)
+    comment_startByte_pairs =[]
+    for code, startByte in code_startByte_pairs:
 
-        ## Previous Source Code:
-        {source_code}
+        # Create prompt for LLM
+        prompt = ChatPromptTemplate.from_template(
+            """
+            You are a documentation assistant.
 
-        Return the updated source code with inline comments that explain the changed functionality:
-        """
-    )
+            ## Instructions:
+            - Given the code, make an descriptive comment of the function
+            - follow best comment practice regrading to the file language
+            - if file language is e.g. python use # or if java use //
+            - Dont make anything else but a single comment
 
-    prompt_input = prompt.format(
-        code_diff = diff,
-        source_code = source_code
-    )
+            ##file language:
+            {file_language}
 
-    # the LLM does it work
-    llm = ChatOllama(model="llama3.2", temperature=0.1)
-    llm_response = llm.invoke(prompt_input)
+            ## Code:
+            {code}
+
+            Return only the comment:
+            """
+        )
+
+        prompt_input = prompt.format(
+            code = code,
+            file_language = file_language
+        )
+
+        start = time.time()
+        # the LLM does it work
+        llm = ChatOllama(model="llama3.2", temperature=0.1)
+        llm_response = llm.invoke(prompt_input)
+        end = time.time()
+        print(f"LLM took {end - start:.4f} seconds")
+        print(llm_response.content)
+        comment_startByte_pairs.append(llm_response.content, startByte)
+
+    commented_code = bytearray(source_code.encode("utf-8"))
+    for comment, startByte in reversed(comment_startByte_pairs):
+        commented_code[startByte:startByte] = comment.encode()
 
     # Write changes to docs
     with open(source_path, "w") as f:
-        f.write(llm_response.content)
+        f.write(commented_code.decode("utf-8"))
 
     # Add changes
     add_files = [source_path]
