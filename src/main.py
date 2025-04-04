@@ -1,12 +1,12 @@
 def mul(a,b):
-  #Return the multiple of a and b.
+#Return the multiple of a and b.
     
     return a*b
 
 
 def calculate(a):
     res = 1
-  #Multiple a with a-1 recursively as long as a is greater than 0.
+#Multiple a with a-1 recursively as long as a is greater than 0.
     
     while a > 0:
         res = mul(res,a)
@@ -14,7 +14,7 @@ def calculate(a):
     return res
 
 def sub(a,b):
-  #This print is just a test print
+#This print is just a test print
     
     print("Test print")
     return a-b
@@ -29,7 +29,7 @@ def not_enough_balance_to_do_stuff(balance, amount):
     return not sub(balance, amount) > 0
 
 def buyPizza(price, balance):
-  #Update balance to reflect payment
+#Update balance to reflect payment
     
     new_balance = sub(balance, price)
     pizza = {
@@ -37,7 +37,7 @@ def buyPizza(price, balance):
         "type": "pepperoni",
         "size": "huge"
     }
-  #Check if balance is enough to buy pizza
+#Check if balance is enough to buy pizza
     
     enough = not_enough_balance_to_do_stuff(new_balance, price)
     if enough:
@@ -47,7 +47,11 @@ def buyPizza(price, balance):
     
 
 def printIdentity(user):
-    print(f"I am: {user.name}")
+    if user.name != null:
+        print(f"I am: {user.name}")
+    else:
+        
+        print("I am unknown!")
 
 
 
