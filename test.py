@@ -97,28 +97,28 @@ def add_commit_run_agent(commit_sha):
 
     for file in diff.files:
         
-  #This is to fix the meta problem of handling commits that changes update_docs
-  #use helper script to detect which language the modified file is written in
+#This is to fix the meta problem of handling commits that changes update_docs
+#use helper script to detect which language the modified file is written in
         if file.filename == ".github/workflows/update_docs.yml":
             continue
         
         file_language = detect_language.detect_language(file.filename) 
         if not file_language:
             continue
-  #add the file to the set of modified files:
+#add the file to the set of modified files:
         
         modified_filepaths.add(file.filename)
 
-  #Get the version of the modified file from the new commit
+#Get the version of the modified file from the new commit
         
         content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
-  #use helper script to remove all comments from the modified file
+#use helper script to remove all comments from the modified file
         
         cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
-  #get the content of the file from the current HEAD commit
+#get the content of the file from the current HEAD commit
         
         try:
-      # Try to fetch the file from the current HEAD (test branch)
+    # Try to fetch the file from the current HEAD (test branch)
             
             head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
         except github.GithubException as e:
@@ -128,15 +128,15 @@ def add_commit_run_agent(commit_sha):
             else:
                 print(e.message)
 
-  #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
-  #would remove, since the new commit holds no comments.
+#compare the cleaned source with head, to figure out which comments in HEAD the new commit 
+#would remove, since the new commit holds no comments.
         
         
         differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
-  #change the generator object to a list
+#change the generator object to a list
         
         differ_list = list(differ)
-  #the new file, with the latest code changes, but the comments from the previous state.
+#the new file, with the latest code changes, but the comments from the previous state.
         
         modified_differ = []
         for line in differ_list:
@@ -148,7 +148,7 @@ def add_commit_run_agent(commit_sha):
         modified_file = difflib.restore(modified_differ, 2)
         modified_file_str = "".join(modified_file)
         
-  #add modified files to list
+#add modified files to list
         
         modified_files.append((file.filename, modified_file_str))
 
@@ -156,7 +156,7 @@ def add_commit_run_agent(commit_sha):
         workflow = repo.get_workflow(WORKFLOW_NAME)
         workflow.create_dispatch(ref=branch_name)
         time.sleep(5)
-  # wait to see when the action is finished, before moving on.
+# wait to see when the action is finished, before moving on.
 
         
         run = workflow.get_runs()[0]
@@ -229,11 +229,11 @@ def commit_multiple_files(ref, files, last_commit, commit_message):
 
 def update_file(file_name, content):
     try:
-  # Check if file exists in the branch
+# Check if file exists in the branch
         
         contents = repo.get_contents(file_name, ref=branch_name)
         
-  # If file exists, update it
+# If file exists, update it
         
         repo.update_file(
             path=file_name,
@@ -244,7 +244,7 @@ def update_file(file_name, content):
         )
 
     except Exception as e:
-  # If file doesn't exist, create it
+# If file doesn't exist, create it
         
         if "404" in str(e):  
             repo.create_file(
@@ -254,7 +254,7 @@ def update_file(file_name, content):
                 branch=branch_name
             )
         else:
-          # If the last comment is right above the current one, merge them
+        # If the last comment is right above the current one, merge them
             raise  
 
 def calculate_semantic_scores(commentPairs):
