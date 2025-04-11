@@ -2,12 +2,13 @@ import sys
 from uuid import uuid4
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
-import git
+import git #gitPython
 import os
 import time
-from tree_sitter import Parser
+from tree_sitter import Parser, Node
 from tree_sitter_languages import get_language
 import detect_language
+from dt_diff_lib import extract_data, collect_code_comment_range
 
 
 repo = git.Repo(".")
@@ -17,6 +18,7 @@ branch_id = uuid4()
 branch_name = "Update-docs-" + str(branch_id)
 repo.git.branch(branch_name)
 repo.git.checkout(branch_name)
+
 
 # Set the branch name in the GitHub Actions environment
 with open(os.getenv('GITHUB_ENV'), "a") as env_file:
@@ -29,45 +31,28 @@ diff_files = list(hcommit.diff("HEAD~1"))
 
 for file in diff_files:
     source_path = str(file.a_path)
+    print("Generating comments for diffs in" + source_path)
     file_language = detect_language.detect_language(source_path)
     if not file_language:
             continue
-    diff = enumerate(repo.git.diff("HEAD~1", "HEAD",source_path).splitlines())
+    h1_content = ""
+    try:
+        h1_commit = repo.commit("HEAD~1")
+        h1_blob = h1_commit.tree / source_path
+        h1_content = h1_blob.data_stream.read().decode("utf-8")
+    except Exception as e:
+        print(e)
+        print("new file incoming!!")
+
 
     with open(source_path, "r") as f:
         source_code = f.read()
 
-    # Extract changed line numbers
-    changed_lines = set()
-    for index, line in diff:
-        if line.startswith("+"):
-            changed_lines.add(index)
-    print(f"this is change lines for {source_path}")
-    print(changed_lines)
-    
-    # Tree-sitter parsing
-    parser = Parser()
-    language = get_language(file_language)
-    parser.set_language(language)
-    tree = parser.parse(bytes(source_code, "utf8"))
-    root_node = tree.root_node
-
     # Extract all function which is in the diff
-    code_startByte_pairs = []
-    def find_code_startByte_pairs(node, changed_lines):
-        # nonlocal code_startLine_pairs
-        if node.type in ["function_definition"]:
-            start_line = node.start_point[0] + 1
-            end_line = node.end_point[0] + 1
-            if any(line in changed_lines for line in range(start_line, end_line + 1)):
-                code = source_code[node.start_byte:node.end_byte].strip()
-                code_startByte_pairs.append((code,node.start_byte))
-        for child in node.children:
-            find_code_startByte_pairs(child, changed_lines)
-    find_code_startByte_pairs(root_node, changed_lines)
+    code_location = extract_data(True, file_language, h1_content, source_code, collect_code_comment_range)
 
-    comment_startByte_pairs =[]
-    for code, startByte in code_startByte_pairs:
+    comment_location =[]
+    for code, old_comment, start_byte, end_byte in code_location:
 
         # Create prompt for LLM
         prompt = ChatPromptTemplate.from_template(
@@ -75,10 +60,11 @@ for file in diff_files:
             You are a documentation assistant.
 
             ## Instructions:
-            - Given the code, make an descriptive comment of the function
+            - Given the code, make an **only** descriptive comment of the function
             - follow best comment practice regrading to the file language
-            - if file language is e.g. python use # or if java use //
-            - Dont make anything else but a single comment
+            - if there is a old comment, update that to reflect the changes to the function
+            - your answer will be directly inserted into code of type file language, so you answer has to be able to compile in the give file language
+            - do not include the code in your answer
 
             ##file language:
             {file_language}
@@ -86,13 +72,17 @@ for file in diff_files:
             ## Code:
             {code}
 
-            Return only the comment:
+            ## Old comment:
+            {old_comment}
+
+            Return **only** the comment:
             """
         )
 
         prompt_input = prompt.format(
             code = code,
-            file_language = file_language
+            file_language = file_language,
+            old_comment = old_comment
         )
 
         start = time.time()
@@ -102,11 +92,11 @@ for file in diff_files:
         end = time.time()
         print(f"LLM took {end - start:.4f} seconds")
         print(llm_response.content)
-        comment_startByte_pairs.append(((llm_response.content + "\n"), startByte))
+        comment_location.append(((llm_response.content + "\n"), start_byte, end_byte))
 
     commented_code = bytearray(source_code.encode("utf-8"))
-    for comment, startByte in reversed(comment_startByte_pairs):
-        commented_code[startByte:startByte] = comment.encode()
+    for comment, start_byte, end_byte in reversed(comment_location):
+        commented_code[start_byte:end_byte] = comment.encode()
 
     # Write changes to docs
     with open(source_path, "w") as f:

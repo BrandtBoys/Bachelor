@@ -1,21 +1,15 @@
 import csv
 from itertools import islice
-import json
-import re
 from dotenv import load_dotenv
+from dt_diff_lib import extract_data, collect_comment_range
 import os
 import uuid
-import github
-from tree_sitter import Parser
-from tree_sitter_languages import get_language
+import github #pyGithub
 import detect_language
-import remove_comments
-from comment_extractor import extract_comments_and_code_pairs, extract_from_content
 from datetime import datetime
 import time
-import difflib
 from github.InputGitTreeElement import InputGitTreeElement
-from sentence_transformers import CrossEncoder
+from metrics import create_csv
 
 load_dotenv()
 
@@ -36,7 +30,7 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 print("repo")
 
 # Commits to compare (replace or allow user input)
-start = 36  # what index of commit the test should start from, have to be higher than "end"
+start = 35  # what index of commit the test should start from, have to be higher than "end"
 end = 32  # what index of commit the test should end at
 
 #set of files which have been modified during the test
@@ -71,6 +65,10 @@ def main():
     with open ("detect_language.py", "r") as f:
         detect_language_code = f.read()
         update_file("detect_language.py", detect_language_code)
+    
+    with open ("dt_diff_lib.py", "r") as f:
+        dt_diff_lib_code = f.read()
+        update_file("dt_diff_lib.py", dt_diff_lib_code)
 
     #Make a requirements file for th dependencies the workflow needs
     with open ("workflow_requirements.txt", "r") as f:
@@ -112,37 +110,16 @@ def add_commit_run_agent(commit_sha):
 
         #Get the version of the modified file from the new commit
         content = repo.get_contents(file.filename,ref=commit_sha).decoded_content
-        #use helper script to remove all comments from the modified file
-        cleaned_source = remove_comments.remove_comments(file_language,content).decode("utf-8")
-        #get the content of the file from the current HEAD commit
+        head_content = ""
         try:
-            # Try to fetch the file from the current HEAD (test branch)
-            head_content = repo.get_contents(file.filename,ref=head_commit_sha).decoded_content.decode("utf-8")
-        except github.GithubException as e:
-            if e.status == 404:
-                print(f"File {file.filename} does not exist in {head_commit_sha} - treating as newly added file.")
-                head_content = ""
-            else:
-                print(e.message)
-
-        #compare the cleaned source with head, to figure out which comments in HEAD the new commit 
-        #would remove, since the new commit holds no comments.
-        differ = difflib.ndiff(head_content.splitlines(keepends=True), cleaned_source.splitlines(keepends=True))
-        #change the generator object to a list
-        differ_list = list(differ)
-        #the new file, with the latest code changes, but the comments from the previous state.
-        modified_differ = []
-        for line in differ_list:
-            if re.match(r"-\s*#", line):
-                modified_differ.append(line[2:])
-            else:
-                modified_differ.append(line)
-
-        modified_file = difflib.restore(modified_differ, 2)
-        modified_file_str = "".join(modified_file)
+            head_content = repo.get_contents(file.filename, ref= head_commit_sha).decoded_content.decode("utf-8")
+        except Exception:
+            print("file does not exist")
+        #use helper script to remove all comments from the modified file
+        cleaned_commit = remove_diff_comments(file_language, head_content, content.decode("utf-8"))
         
         #add modified files to list
-        modified_files.append((file.filename, modified_file_str))
+        modified_files.append((file.filename, cleaned_commit))
 
     if commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments."):
         workflow = repo.get_workflow(WORKFLOW_NAME)
@@ -155,46 +132,41 @@ def add_commit_run_agent(commit_sha):
             time.sleep(5)  # Wait and check again
             run = workflow.get_runs()[0]  # Refresh latest run
 
-    #fetch the latest changes to the test branch
-    branch = repo.get_branch(branch_name)
-    #fetch the HEAD commit of test branch
-    agent_HEAD_commit = branch.commit.sha
-
-    result_rows = []
-    comment_pairs = []
-    comment_metedata = []
-
-    for filename, content in modified_files:
-        file_language = detect_language.detect_language(filename) 
-        if not file_language:
-            continue
-        original_content = repo.get_contents(filename,ref=commit_sha) # original commit
-        original_comment_code_pairs = extract_from_content(original_content, file_language)
-
-        agent_comment_code_pairs = get_agent_diff_content(repo, filename, agent_HEAD_commit, file_language)
-
-        # collects pairs of comments_code_pairs from original and agent, where the code is identical and save the comments if the comments differs
-        for agComment, agCode in agent_comment_code_pairs:
-            for orgComment, orgCode in original_comment_code_pairs:
-                if orgCode.strip() == agCode.strip() and orgComment.strip() != agComment.strip():
-                    comment_pairs.append([orgComment, agComment])
-                    comment_metedata.append([orgCode, filename, agent_HEAD_commit])
-
-    if not comment_pairs:
-        return
-
-    scores = calculate_semantic_scores(comment_pairs)
-
-    for score, (orgComment, agComment), (code, filename, commit) in zip(scores, comment_pairs, comment_metedata):
-        result_rows.append([score, code, orgComment, agComment, filename, commit])
-
-    with open(result_file, mode="a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerows(result_rows)
+    create_csv(repo, branch_name, modified_files, commit_sha, result_file)
 
     
 
 def commit_multiple_files(ref, files, last_commit, commit_message):
+    """
+    Commit multiple files to a GitHub branch using the PyGithub API.
+
+    This function stages and commits multiple file changes in a single Git commit,
+    then moves the specified branch reference to the new commit.
+
+    Parameters
+    ----------
+    ref : github.Reference
+        The reference object for the branch (e.g., `repo.get_git_ref("heads/main")`).
+    files : list of tuple[str, str]
+        A list of tuples where each tuple contains:
+        - path (str): the file path in the repo.
+        - content (str): the file content to commit.
+    last_commit : github.GitCommit
+        The last commit object on the branch, used as the parent for the new commit.
+    commit_message : str
+        The commit message for the new commit.
+
+    Returns
+    -------
+    bool
+        True if the commit was created and the branch pointer was updated.
+        False if there were no files to commit.
+
+    Notes
+    -----
+    - This function assumes access to a global `repo` object (of type `github.Repository.Repository`).
+    - Uses UTF-8 encoding for file content.
+    """
     if not files:
         print("No file-changes to commit")
         return False
@@ -219,6 +191,24 @@ def commit_multiple_files(ref, files, last_commit, commit_message):
     return True
 
 def update_file(file_name, content):
+    """
+    Update or create a file in a GitHub repository branch using the PyGithub API.
+
+    This function checks if the specified file exists in a branch (`branch_name`). If it exists,
+    the file is updated with new content. If it does not exist (404 error), the file is created.
+
+    Parameters
+    ----------
+    file_name : str
+        The name (or path) of the file to update or create in the repository.
+    content : str
+        The new content to write to the file.
+
+    Raises
+    ------
+    Exception
+        If an unexpected error occurs during the GitHub API call (excluding 404).
+    """
     try:
         # Check if file exists in the branch
         contents = repo.get_contents(file_name, ref=branch_name)
@@ -244,81 +234,36 @@ def update_file(file_name, content):
         else:
             raise  # Raise other unexpected errors
 
-def calculate_semantic_scores(commentPairs):
-    model = CrossEncoder("cross-encoder/stsb-roberta-base")
-    scores = model.predict(commentPairs)
-    return scores
+def remove_diff_comments(file_language, head_content, commit_content):
+    """
+    Remove comments from functions that were changed in a commit diff.
 
-# Returns comment code pairs created by the agent in the *last* commit
-def get_agent_diff_content(repo, filename, commit_sha, file_language):
-    # Get commits and file contents
-    commit = repo.get_commit(sha=commit_sha)
-    old_content = repo.get_contents(filename, ref=commit.parents[0].sha).decoded_content.decode() # test commit
-    new_content = repo.get_contents(filename, ref=commit.sha).decoded_content.decode() # agent commit
+    This function uses Tree-sitter to identify comments within function definitions that are
+    affected by a code diff (between `head_content` and `commit_content`). It then removes
+    those specific comment byte ranges from the `commit_content`.
 
+    Parameters
+    ----------
+    file_language : str
+        The programming language of the file (e.g., "python", "javascript") used to initialize the Tree-sitter parser.
+    head_content : str
+        The content of the file in the base (head) revision, used for diff comparison.
+    commit_content : str
+        The content of the file in the new (commit) revision, from which comments will be removed.
 
-    # Generate diff
-    diff = difflib.unified_diff(
-        old_content.splitlines(), new_content.splitlines(), n=0
-    )
+    Returns
+    -------
+    str
+        The updated source code with targeted diff-related comments removed.
+    """
+    # Extract comment ranges
+    diff_comments_byte_range = extract_data(True, file_language, head_content, commit_content, collect_comment_range)
 
-    # Extract changed line numbers
-    changed_lines = set()
-    for line in diff:
-        if line.startswith("@@"):
-            parts = line.split(" ")
-            new_range = parts[2]  # like +12,3
-            start_line = int(new_range.split(",")[0][1:])
-            line_count = int(new_range.split(",")[1]) if "," in new_range else 1
-            for i in range(start_line, start_line + line_count):
-                changed_lines.add(i)
-
-    # Tree-sitter parsing
-    parser = Parser()
-    language = get_language(file_language)
-    parser.set_language(language)
-    tree = parser.parse(bytes(new_content, "utf8"))
-    root_node = tree.root_node
-
-    # Find affected code blocks
-    comments = []
-    comment_code_pairs = []
-    def find_comment_code_pairs(node, changed_lines):
-        nonlocal comments, comment_code_pairs
-        if node.type in ["comment", "block_comment"]:
-            start_line = node.start_point[0] + 1
-            end_line = node.end_point[0] + 1
-            if any(line in changed_lines for line in range(start_line, end_line + 1)):
-                comment_text = new_content[node.start_byte:node.end_byte].strip()
-                # If the last comment is right above the current one, merge them
-                if comments and comments[-1][1] == node.start_byte - 1:
-                    comments[-1] = (comments[-1][0] + "\n" + comment_text, comments[-1][1])
-                else:
-                    comments.append((comment_text, node.start_byte))
-        elif node.type in ["function_definition", "class_definition", "expression_statement", "assignment"]:
-            code_text = new_content[node.start_byte:node.end_byte].strip()
-            
-            if comments:
-                combined_comment = "\n".join(c[0] for c in comments)
-                clean_code_text = remove_comments.remove_comments(file_language, code_text.encode("utf-8")).decode("utf-8")
-                comment_code_pairs.append((combined_comment, clean_code_text))
-                comments = []  # Reset comments after assignment
-        for child in node.children:
-            find_comment_code_pairs(child, changed_lines)
-    find_comment_code_pairs(root_node, changed_lines)
-
-    # Flatten blocks into strings
-
-    with open("test.md", mode="w", encoding="utf-8") as f:
-        f.write("## Old Content")
-        f.write(old_content)
-        f.write("## New Content")
-        f.write(new_content)
-        f.write("## Pruned")
-        for comment, code in comment_code_pairs:
-            f.write(f"Code: {code}, Comment: {comment}")
+    cleaned_code = bytearray(commit_content.encode("utf-8"))
+    for start_byte, end_byte in reversed(diff_comments_byte_range):
+        cleaned_code[start_byte:end_byte] = b""
     
-    return comment_code_pairs
+    return(cleaned_code.decode("utf-8"))
 
 
 

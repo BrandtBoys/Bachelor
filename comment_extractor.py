@@ -24,7 +24,7 @@ def extract_comments_and_code_pairs(code, code_language):
     def traverse(node):
         nonlocal comments, comment_code_pairs
         
-        if node.type in ["comment", "block_comment"]:
+        if node.type in ["comment", "block_comment"] or (node.type in ["string"] and node.parent.parent.parent.type in ["function_definition"] and node.parent.children[0].type in ["string"]):
             comment_text = code[node.start_byte:node.end_byte].strip()
             
             # If the last comment is right above the current one, merge them
