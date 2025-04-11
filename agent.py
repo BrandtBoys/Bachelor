@@ -64,7 +64,7 @@ for file in diff_files:
             - follow best comment practice regrading to the file language
             - if there is a old comment, update that to reflect the changes to the function
             - your answer will be directly inserted into code of type file language, so you answer has to be able to compile in the give file language
-            - do not include the code in your answer
+            - do **not** include the function definition in your answer
 
             ##file language:
             {file_language}
@@ -76,6 +76,24 @@ for file in diff_files:
             {old_comment}
 
             Return **only** the comment:
+
+            ##Example start:
+            - Code:
+            def multiply(a: int, b: int) -> int:
+                return a * b
+
+            - You should return:
+                /'''
+                Multiplies two integers and returns the result.
+
+                Parameters:
+                    a (int): The first number to multiply.
+                    b (int): The second number to multiply.
+
+                Returns:
+                    int: The product of the two input numbers.
+                /'''
+            ##Example end
             """
         )
 

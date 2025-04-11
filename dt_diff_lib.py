@@ -1,6 +1,5 @@
 from tree_sitter import Parser
 from tree_sitter_languages import get_language
-from comment_extractor import remove_comments
 import difflib
 import re
 
@@ -46,8 +45,6 @@ class CommentNode:
         self.nodes = nodes
         self.start_byte = nodes[0].start_byte
         self.end_byte = nodes[-1].end_byte
-        self.start_point = nodes[0].start_point
-        self.end_point = nodes[-1].end_point
 
     def __repr__(self):
         return f"<CommentNode comment>\n{self.content}"
@@ -85,7 +82,7 @@ def extract_data(use_diff, file_language, head_content, commit_content, handler_
     if use_diff:
         changed_lines = get_changed_line_numbers(head_content, commit_content)
         if not changed_lines:
-            return commit_content
+            return []
     
      # Tree-sitter parsing
     root_node = tree_sitter_parser_init(file_language, commit_content.encode("utf-8"))
@@ -123,7 +120,7 @@ def extract_data(use_diff, file_language, head_content, commit_content, handler_
 
                             first_node_in_block = block_node.children[0]
                                 
-                            handler_fn(func_node=node, first_node=first_node_in_block, content=commit_content, result_list=result)
+                            handler_fn(func_node=node, first_node=first_node_in_block, content=commit_content, nodeIdSet=nodeId, result_list=result)
                             
                 except Exception as e:
                     print(f"error: {e}")
@@ -132,7 +129,6 @@ def extract_data(use_diff, file_language, head_content, commit_content, handler_
 
         visit(root_node)
     traverse_functions(root_node, changed_lines, handler_fn)
-
     return result 
 
 def identify_comment_node(node, nodeIdSet):
@@ -179,7 +175,7 @@ def identify_comment_node(node, nodeIdSet):
         
 
 #Used in remove_comments
-def collect_comment_range(first_node, result_list, **kwargs):
+def collect_comment_range(first_node, result_list, nodeIdSet, **kwargs):
     '''
     Asses if a node is a comment node, and appends tuples with the comment nodes start_byte and end_byte to the result_list
 
@@ -188,14 +184,15 @@ def collect_comment_range(first_node, result_list, **kwargs):
             List[Tuple[int,int]]
 
     '''
-    comment_node = identify_comment_node(first_node)
+    comment_node = identify_comment_node(first_node, nodeIdSet)
+    # print(comment_node)
     if comment_node :
         start_byte = comment_node.start_byte
         end_byte = comment_node.end_byte
         result_list.append((start_byte,end_byte))
 
 #Used in agent
-def collect_code_comment_range(func_node, first_node, content, result_list):
+def collect_code_comment_range(func_node, first_node, content, result_list, nodeIdSet):
     """
     Extracts the source code of a function and any associated comment,
     then appends this data along with byte range information to the result list.
@@ -215,15 +212,15 @@ def collect_code_comment_range(func_node, first_node, content, result_list):
     """
     code = content[func_node.start_byte : func_node.end_byte].strip()
     old_comment = ""
-    start_byte = first_node.start_byte
+    start_byte = first_node.parent.start_byte
     end_byte = start_byte
-    comment_node = identify_comment_node(first_node)
+    comment_node = identify_comment_node(first_node, nodeIdSet)
     if comment_node:
         end_byte = comment_node.end_byte()
     result_list.append((code, old_comment, start_byte, end_byte))
 
 #Used in semantic
-def collect_code_comment_pairs(func_node, first_node, content, result_list):
+def collect_code_comment_pairs(func_node, first_node, content, result_list, nodeIdSet):
     """
     Appends a record containing the source code of a function and its associated comment
     to the result_list, if a valid comment is found at start of function block.
@@ -242,6 +239,6 @@ def collect_code_comment_pairs(func_node, first_node, content, result_list):
     """
     code = content[func_node.start_byte : func_node.end_byte].strip()
     old_comment = ""
-    comment_node = identify_comment_node(first_node)
+    comment_node = identify_comment_node(first_node, nodeIdSet)
     if comment_node:
         result_list.append((code, old_comment))

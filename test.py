@@ -13,6 +13,8 @@ from metrics import create_csv
 
 load_dotenv()
 
+counter = 0
+
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
 REPO_NAME = "flask-fork"  # Change this
@@ -256,12 +258,15 @@ def remove_diff_comments(file_language, head_content, commit_content):
     str
         The updated source code with targeted diff-related comments removed.
     """
+    global counter
+    counter += 1
     # Extract comment ranges
     diff_comments_byte_range = extract_data(True, file_language, head_content, commit_content, collect_comment_range)
-
     cleaned_code = bytearray(commit_content.encode("utf-8"))
-    for start_byte, end_byte in reversed(diff_comments_byte_range):
-        cleaned_code[start_byte:end_byte] = b""
+    if diff_comments_byte_range:
+        for start_byte, end_byte in reversed(diff_comments_byte_range):
+            cleaned_code[start_byte:end_byte] = b""
+    print("No comment found")
     
     return(cleaned_code.decode("utf-8"))
 

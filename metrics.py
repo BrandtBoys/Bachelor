@@ -1,3 +1,4 @@
+import csv
 import detect_language
 from dt_diff_lib import extract_data, collect_code_comment_pairs
 from sentence_transformers import CrossEncoder
@@ -16,7 +17,7 @@ def create_csv(repo, branch_name, modified_files, commit_sha, result_file):
         file_language = detect_language.detect_language(filename) 
         if not file_language:
             continue
-        original_content = repo.get_contents(filename,ref=commit_sha) # original commit
+        original_content = repo.get_contents(filename,ref=commit_sha).decoded_content.decode() # original commit
         # Find the original paris of comments which relates to some code
         original_comment_code_pairs = extract_data(False, file_language, None, original_content,collect_code_comment_pairs)
 

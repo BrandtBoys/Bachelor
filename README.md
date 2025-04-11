@@ -10,6 +10,20 @@ for mac
 ```shell
 alias python3 "/opt/homebrew/bin/python3.12"
 ```
+## Github access token
+You will need to add a personal access token (PAT) from Github to the .env file
+
+### Get a PAT by going to you Github profile:
+path to token:
+settings -> developer settings -> Token(classic)
+Press "Generate token"
+Give these permissions:
+    - admin:org
+    - gist
+    - repo
+    - workflow
+Go back to .env and add a variable called GITHUB_PAT = your_PAT
+(Sometime you have to close down VS code for the .env to register the change)
 
 ## to-do
 - [] add metadata to test results
