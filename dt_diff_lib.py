@@ -237,8 +237,10 @@ def collect_code_comment_pairs(func_node, first_node, content, result_list, node
     Returns:
         None
     """
-    code = content[func_node.start_byte : func_node.end_byte].strip()
+    func_def = " ".join(child.text.decode("utf-8") for child in func_node.children[:2])
+    code = func_def
     old_comment = ""
     comment_node = identify_comment_node(first_node, nodeIdSet)
     if comment_node:
-        result_list.append((code, old_comment))
+        old_comment = content[comment_node.start_byte: comment_node.end_byte]
+        result_list.append((old_comment, code))
