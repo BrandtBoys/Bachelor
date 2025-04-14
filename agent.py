@@ -8,7 +8,7 @@ import time
 from tree_sitter import Parser, Node
 from tree_sitter_languages import get_language
 import detect_language
-from dt_diff_lib import extract_data, collect_code_comment_range
+from dt_diff_lib import extract_data, collect_code_comment_range, tree_sitter_parser_init
 
 
 repo = git.Repo(".")
@@ -54,6 +54,8 @@ for file in diff_files:
     comment_location =[]
     for code, old_comment, start_byte, end_byte in code_location:
 
+        print(old_comment)
+
         # Create prompt for LLM
         prompt = ChatPromptTemplate.from_template(
             """
@@ -76,24 +78,6 @@ for file in diff_files:
             {old_comment}
 
             Return **only** the comment:
-
-            ##Example start:
-            - Code:
-            def multiply(a: int, b: int) -> int:
-                return a * b
-
-            - You should return:
-                /'''
-                Multiplies two integers and returns the result.
-
-                Parameters:
-                    a (int): The first number to multiply.
-                    b (int): The second number to multiply.
-
-                Returns:
-                    int: The product of the two input numbers.
-                /'''
-            ##Example end
             """
         )
 
@@ -108,9 +92,9 @@ for file in diff_files:
         llm = ChatOllama(model="llama3.2", temperature=0.1)
         llm_response = llm.invoke(prompt_input)
         end = time.time()
-        print(f"LLM took {end - start:.4f} seconds")
-        print(llm_response.content)
-        comment_location.append(((llm_response.content + "\n"), start_byte, end_byte))
+        # print(f"LLM took {end - start:.4f} seconds")
+        # print(llm_response.content)
+        comment_location.append(((llm_response.content), start_byte, end_byte))
 
     commented_code = bytearray(source_code.encode("utf-8"))
     for comment, start_byte, end_byte in reversed(comment_location):

@@ -1,7 +1,7 @@
 import csv
 from itertools import islice
 from dotenv import load_dotenv
-from dt_diff_lib import extract_data, collect_comment_range
+from dt_diff_lib import extract_data, collect_comment_lines, edit_diff_restore_comments
 import os
 import uuid
 import github #pyGithub
@@ -10,10 +10,9 @@ from datetime import datetime
 import time
 from github.InputGitTreeElement import InputGitTreeElement
 from metrics import create_csv
+import uuid
 
 load_dotenv()
-
-counter = 0
 
 # GitHub repository details
 GITHUB_OWNER = "BrandtBoys"  # Change this
@@ -32,8 +31,8 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 print("repo")
 
 # Commits to compare (replace or allow user input)
-start = 35  # what index of commit the test should start from, have to be higher than "end"
-end = 32  # what index of commit the test should end at
+start = 39  # what index of commit the test should start from, have to be higher than "end"
+end = 34  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()
@@ -119,9 +118,11 @@ def add_commit_run_agent(commit_sha):
             print("file does not exist")
         #use helper script to remove all comments from the modified file
         cleaned_commit = remove_diff_comments(file_language, head_content, content.decode("utf-8"))
+
+        modified_file = edit_diff_restore_comments(file_language,head_content,cleaned_commit)
         
         #add modified files to list
-        modified_files.append((file.filename, cleaned_commit))
+        modified_files.append((file.filename, modified_file))
 
     if commit_multiple_files(ref, modified_files, head_commit, "Add incoming files, replicated commit without comments."):
         workflow = repo.get_workflow(WORKFLOW_NAME)
@@ -258,17 +259,23 @@ def remove_diff_comments(file_language, head_content, commit_content):
     str
         The updated source code with targeted diff-related comments removed.
     """
-    global counter
-    counter += 1
-    # Extract comment ranges
-    diff_comments_byte_range = extract_data(True, file_language, head_content, commit_content, collect_comment_range)
-    cleaned_code = bytearray(commit_content.encode("utf-8"))
-    if diff_comments_byte_range:
-        for start_byte, end_byte in reversed(diff_comments_byte_range):
-            cleaned_code[start_byte:end_byte] = b""
+  
+    # Extract comment lines
+    diff_comment_lines = set(extract_data(True, file_language, head_content, commit_content, collect_comment_lines))
+    
+    content = commit_content.splitlines(keepends=True)
+    cleaned_content = []
+    counter = 1
+    if diff_comment_lines:
+        for line in content:
+            if counter not in diff_comment_lines:
+                cleaned_content.append(line)
+            counter += 1
+    else:
+        return commit_content+"\n"
     print("No comment found")
     
-    return(cleaned_code.decode("utf-8"))
+    return("".join(cleaned_content)+"\n")
 
 
 

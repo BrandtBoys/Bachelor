@@ -1,30 +1,41 @@
-from tree_sitter import Parser
+from tree_sitter import Parser, Node
 from tree_sitter_languages import get_language
 import difflib
 import re
+import uuid
 
-def get_changed_line_numbers( head_content, commit_content):
+def get_changed_line_numbers( head_content, commit_content, count_on_head_commit):
     changed_lines = set()
-    if commit_content:
+    if head_content:
 
-        diff = difflib.unified_diff(
+        diff = list(difflib.unified_diff(
         head_content.splitlines(), commit_content.splitlines(), n=0
-        )
+        ))
 
         new_line_num = 0
         for line in diff:
             if line.startswith('@@'):
-                match = re.match(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@', line)
+                match = re.match(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@', line)
                 if match:
-                    new_line_num = int(match.group(1)) - 1  # offset before first line in hunk
+                    if not count_on_head_commit:
+                        new_line_num = int(match.group(3)) - 1  # offset before first line in hunk
+                    else:
+                        new_line_num = int(match.group(1)) - 1  # offset before first line in hunk
             elif line.startswith('+') and not line.startswith('+++'):
-                new_line_num += 1
-                changed_lines.add(new_line_num)
-            elif line.startswith('-') or line.startswith('---'):
-                continue  # don't increment line number
+                if not count_on_head_commit:
+                    new_line_num += 1
+                    changed_lines.add(new_line_num)
+                else:
+                    continue
+            elif line.startswith('-') and not line.startswith('---'):
+                if not count_on_head_commit:
+                    continue  # don't increment line number
+                else: 
+                    new_line_num += 1
+                    changed_lines.add(new_line_num)
             else:
                 new_line_num += 1  # context line
-    else:
+    elif not head_content and not count_on_head_commit:
         counter = 1
         for line in commit_content.decode("utf-8").splitlines():
             changed_lines.add(counter)
@@ -45,12 +56,14 @@ class CommentNode:
         self.nodes = nodes
         self.start_byte = nodes[0].start_byte
         self.end_byte = nodes[-1].end_byte
+        self.start_point = (nodes[0].start_point[0]+1,nodes[0].start_point[1])
+        self.end_point = (nodes[-1].end_point[0]+1,nodes[-1].end_point[1]+1)
 
     def __repr__(self):
         return f"<CommentNode comment>\n{self.content}"
 
 
-def extract_data(use_diff, file_language, head_content, commit_content, handler_fn):
+def extract_data(use_diff, file_language, head_content, commit_content, handler_fn, build_tree_from_head_content = False):
     """
     Extract data from parsed source code using Tree-sitter, optionally using diff information.
 
@@ -77,15 +90,18 @@ def extract_data(use_diff, file_language, head_content, commit_content, handler_
     -------
     list
         The accumulated results collected by the `handler_fn`.
-    """
+    """    
     changed_lines = []
     if use_diff:
-        changed_lines = get_changed_line_numbers(head_content, commit_content)
+        changed_lines = get_changed_line_numbers(head_content, commit_content, build_tree_from_head_content)
         if not changed_lines:
             return []
     
-     # Tree-sitter parsing
-    root_node = tree_sitter_parser_init(file_language, commit_content.encode("utf-8"))
+    if not build_tree_from_head_content:
+        root_node = tree_sitter_parser_init(file_language,commit_content.encode("utf-8"))
+    else:
+        root_node = tree_sitter_parser_init(file_language,head_content.encode("utf-8"))
+
 
     result = []
     nodeId = set()
@@ -113,14 +129,15 @@ def extract_data(use_diff, file_language, head_content, commit_content, handler_
                         #assessing lines is only relevant if you look at a diff
                         start_line = node.start_point[0] + 1
                         end_line = node.end_point[0] + 1
-                        if any(line in changed_lines for line in range(start_line, end_line + 1)) or not use_diff:
+                        line_range = range(start_line, end_line + 1)
+                        if any(line in changed_lines for line in line_range) or not use_diff:
                             block_node = next((child for child in node.children if child.type == "block"), None)
                             if not block_node or not block_node.children:
                                 raise Exception("No block or block has no children in function")
 
                             first_node_in_block = block_node.children[0]
                                 
-                            handler_fn(func_node=node, first_node=first_node_in_block, content=commit_content, nodeIdSet=nodeId, result_list=result)
+                            handler_fn(func_node=node, first_node=first_node_in_block, content=commit_content, nodeIdSet=nodeId, result_list=result, mod_lines=set(changed_lines).intersection(line_range))
                             
                 except Exception as e:
                     print(f"error: {e}")
@@ -185,14 +202,30 @@ def collect_comment_range(first_node, result_list, nodeIdSet, **kwargs):
 
     '''
     comment_node = identify_comment_node(first_node, nodeIdSet)
-    # print(comment_node)
     if comment_node :
         start_byte = comment_node.start_byte
         end_byte = comment_node.end_byte
         result_list.append((start_byte,end_byte))
 
+def collect_comment_lines(first_node, result_list, nodeIdSet, **kwargs):
+    '''
+    Asses if a node is a comment node, and appends tuples with the comment nodes start_byte and end_byte to the result_list
+
+        Parameter:
+            tree_sitter.Node
+            List[Tuple[int,int]]
+
+    '''
+    comment_node = identify_comment_node(first_node, nodeIdSet)
+    if comment_node :
+        # start_byte = comment_node.start_byte
+        # end_byte = comment_node.end_byte
+        # result_list.append((start_byte,end_byte))
+        for line in range(comment_node.start_point[0], comment_node.end_point[0]+1):
+            result_list.append(line)
+
 #Used in agent
-def collect_code_comment_range(func_node, first_node, content, result_list, nodeIdSet):
+def collect_code_comment_range(func_node, first_node, content, result_list, nodeIdSet, **kwargs):
     """
     Extracts the source code of a function and any associated comment,
     then appends this data along with byte range information to the result list.
@@ -212,15 +245,22 @@ def collect_code_comment_range(func_node, first_node, content, result_list, node
     """
     code = content[func_node.start_byte : func_node.end_byte].strip()
     old_comment = ""
-    start_byte = first_node.parent.start_byte
+    last_node_before_block = first_node.parent.prev_sibling
+    _ , start_col = func_node.start_point
+    start_row, _ = last_node_before_block.end_point
+    # Calculating the start_point to right under and one index in from the func def.
+    start_row = start_row+1
+    start_col = start_col+4
+    start_byte = point_to_byte(content.encode("utf-8"),start_row,start_col)
     end_byte = start_byte
     comment_node = identify_comment_node(first_node, nodeIdSet)
     if comment_node:
         end_byte = comment_node.end_byte()
+        old_comment = content[first_node.parent.start_byte:end_byte] #first_node.parent.start_byte, is the first non whitespace in the block of the function, which should be the function-level comment
     result_list.append((code, old_comment, start_byte, end_byte))
 
 #Used in semantic
-def collect_code_comment_pairs(func_node, first_node, content, result_list, nodeIdSet):
+def collect_code_comment_pairs(func_node, first_node, content, result_list, nodeIdSet, **kwargs):
     """
     Appends a record containing the source code of a function and its associated comment
     to the result_list, if a valid comment is found at start of function block.
@@ -242,3 +282,42 @@ def collect_code_comment_pairs(func_node, first_node, content, result_list, node
     comment_node = identify_comment_node(first_node, nodeIdSet)
     if comment_node:
         result_list.append((code, old_comment))
+
+def collect_comment_change_lines(first_node, nodeIdSet, mod_lines, result_list, **kwargs):
+
+    first_node.end_point[0]
+    comment_node = identify_comment_node(first_node, nodeIdSet)
+    if comment_node:
+        for line in mod_lines:
+            if line in range(comment_node.start_point[0],comment_node.end_point[0]+1):
+                result_list.append(line)
+    
+
+def point_to_byte(source: bytes, row: int, col: int) -> int:
+    '''
+    Converts points(row,col) to bytes based on a given source (str)
+    '''
+    lines = source.splitlines(keepends=True)
+    byte_offset = sum(len(lines[i]) for i in range(row+1)) + col
+    return byte_offset
+
+def edit_diff_restore_comments(file_language, head_content, cleaned_content):
+    mod_comment_lines = set(extract_data(True, file_language,head_content, cleaned_content, collect_comment_change_lines, build_tree_from_head_content=True))
+    diff = difflib.ndiff(head_content.splitlines(), cleaned_content.splitlines())
+    diff_list = list(diff)
+    counter = 1
+    mod_diff = []
+    for line in diff_list:
+        if counter in mod_comment_lines and line.startswith("-"):
+            mod_diff.append(" " + line[1:])
+        elif line.startswith(" "):
+            mod_diff.append(line)
+        elif line.startswith("+") or line.startswith("?"):
+            mod_diff.append(line)
+            continue
+        counter = counter + 1 
+    
+    modified_file = difflib.restore(mod_diff, 2)
+    modified_file_str = "\n".join(modified_file)
+
+    return modified_file_str

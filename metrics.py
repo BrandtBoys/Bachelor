@@ -1,6 +1,6 @@
 import csv
 import detect_language
-from dt_diff_lib import extract_data, collect_code_comment_pairs
+from dt_diff_lib import extract_data, collect_code_comment_pairs, tree_sitter_parser_init
 from sentence_transformers import CrossEncoder
 
 def create_csv(repo, branch_name, modified_files, commit_sha, result_file):
@@ -81,5 +81,4 @@ def get_agent_diff_content(repo, filename, commit_sha, file_language):
     commit = repo.get_commit(sha=commit_sha)
     old_content = repo.get_contents(filename, ref=commit.parents[0].sha).decoded_content.decode() # test commit
     new_content = repo.get_contents(filename, ref=commit.sha).decoded_content.decode() # agent commit
-
     return extract_data(True, file_language, old_content, new_content, collect_code_comment_pairs)
