@@ -98,7 +98,7 @@ for file in diff_files:
 
     commented_code = bytearray(source_code.encode("utf-8"))
     for comment, start_byte, end_byte in reversed(comment_location):
-        commented_code[start_byte:end_byte] = comment.encode()
+        commented_code[start_byte:end_byte] = (comment+"\n").encode()
 
     # Write changes to docs
     with open(source_path, "w") as f:

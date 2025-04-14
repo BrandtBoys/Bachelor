@@ -31,8 +31,8 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 print("repo")
 
 # Commits to compare (replace or allow user input)
-start = 39  # what index of commit the test should start from, have to be higher than "end"
-end = 34  # what index of commit the test should end at
+start = 36  # what index of commit the test should start from, have to be higher than "end"
+end = 32  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()

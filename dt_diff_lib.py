@@ -37,7 +37,7 @@ def get_changed_line_numbers( head_content, commit_content, count_on_head_commit
                 new_line_num += 1  # context line
     elif not head_content and not count_on_head_commit:
         counter = 1
-        for line in commit_content.decode("utf-8").splitlines():
+        for line in commit_content.splitlines():
             changed_lines.add(counter)
             counter += 1
     return changed_lines
@@ -249,7 +249,7 @@ def collect_code_comment_range(func_node, first_node, content, result_list, node
     _ , start_col = func_node.start_point
     start_row, _ = last_node_before_block.end_point
     # Calculating the start_point to right under and one index in from the func def.
-    start_row = start_row+1
+    start_row = start_row
     start_col = start_col+4
     start_byte = point_to_byte(content.encode("utf-8"),start_row,start_col)
     end_byte = start_byte
