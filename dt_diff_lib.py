@@ -255,7 +255,7 @@ def collect_code_comment_range(func_node, first_node, content, result_list, node
     end_byte = start_byte
     comment_node = identify_comment_node(first_node, nodeIdSet)
     if comment_node:
-        end_byte = comment_node.end_byte()
+        end_byte = comment_node.end_byte
         old_comment = content[first_node.parent.start_byte:end_byte] #first_node.parent.start_byte, is the first non whitespace in the block of the function, which should be the function-level comment
     result_list.append((code, old_comment, start_byte, end_byte))
 
