@@ -26,7 +26,7 @@ EXTENSION_TO_LANGUAGE = {
     ".pl": "perl",
     ".lua": "lua",
     ".dart": "dart",
-    ".scala": "scala"
+    ".scala": "scala",
 }
 
 def detect_language(filename):
