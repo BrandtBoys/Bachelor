@@ -1,8 +1,12 @@
 #!/bin/sh -l
 
-#Install Git
+# Install Git
 apt-get update
 apt-get install -y git
+apt-get install -y curl
+
+# Tell the action to trust github/workspace - to avoid "dubious ownership"
+git config --global --add safe.directory /github/workspace
 
 # Login on git with DocTide bot
 git config --global user.name "DocTide[bot]"
