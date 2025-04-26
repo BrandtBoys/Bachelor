@@ -65,7 +65,7 @@ def main():
         add_files = [source_path]
         repo.index.add(add_files)
 
-    print("{success_runs}/{runs}")
+    print(f"{success_runs}/{runs}")
 
     fail_rate = os.path.join("fail_rate.csv")
     fail_rate_exists = os.path.exists(fail_rate)
