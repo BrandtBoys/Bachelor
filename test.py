@@ -62,9 +62,9 @@ def main():
 
     #read the content of the test_workflow, and add it into the test environment, which enables the test 
     #repo to call DocTide workflow
-    with open ("test_workflow.yml", "r") as f:
+    with open (".github/workflows/update_docs.yml", "r") as f:
         test_workflow = f.read()
-        update_file(".github/workflows/test_workflow.yml", test_workflow)
+        update_file(".github/workflows/update_docs.yml", test_workflow)
     
     #add loop of commits
     for commit in reversed(commits):
