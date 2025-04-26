@@ -19,9 +19,11 @@ pip install -r workflow_requirements.txt
 # Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
+# Start Ollama
+ollama serve
+
 # Pull Ollama model
 ollama pull llama3.2
-ollama serve
 
 # Run Doctide agent
 python agent.py
