@@ -1,9 +1,13 @@
 #!/bin/sh -l
 
+#Install Git
+apt-get update
+apt-get install -y git
+
 # Login on git with DocTide bot
 git config --global user.name "DocTide[bot]"
 git config --global user.email "DocTide[bot]@users.noreply.github.com"
-git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+git remote set-url origin https://x-access-token:${secrets.GITHUB_TOKEN}@github.com/${github.repository}.git
 
 # Install doctide.py dependencies
 pip install -r workflow_requirements.txt
@@ -21,7 +25,7 @@ python agent.py
 if [ $1 ]
 then
     # Checkout back to the caller test-branch
-    git checkout ${{ github.ref }}
+    git checkout ${github.ref}
     # Fetch the update-docs branch, the agent has just made
     git fetch origin $BRANCH_NAME # An env variable set by the agent script
     # Merge test-branch and update-docs branch
@@ -30,6 +34,6 @@ then
     git push -d origin $BRANCH_NAME
     git push origin HEAD
 else
-    GH_TOKEN = ${{ github.token }}
+    GH_TOKEN = ${github.token}
     gh pr create -B main -H $BRANCH_NAME --fill-first
 fi
