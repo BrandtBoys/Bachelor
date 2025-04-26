@@ -7,6 +7,6 @@ jobs:
     steps:
       - name: run DocTide action
         id: doctide
-        uses: BrandtBoys/Bachelor@v3
+        uses: BrandtBoys/Bachelor@v5
         with:
           testing: true
