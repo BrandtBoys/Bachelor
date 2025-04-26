@@ -36,6 +36,11 @@ ollama pull llama3.2
 # Run Doctide agent
 python /agent.py
 
+# Fetch the BRANCH_NAME env var into the container
+if [ -f "$GITHUB_ENV" ]; then
+    export $(grep BRANCH_NAME "$GITHUB_ENV")
+fi
+
 # Test mode:
 if [ $1 ]
 then
