@@ -21,6 +21,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 # Pull Ollama model
 ollama pull llama3.2
+ollama serve
 
 # Run Doctide agent
 python agent.py
