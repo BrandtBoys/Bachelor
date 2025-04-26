@@ -23,7 +23,15 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama serve > /dev/null 2>&1 &
 
 # Pull Ollama model
-ollama pull llama3.2
+ollama pull llama3.2 &
+OLLAMA_PID=$!
+
+# Wait for Ollama API to become available
+echo "Waiting for Ollama to be ready..."
+until curl -s http://127.0.0.1:11434 > /dev/null; do
+  sleep 1
+done
+echo "Ollama is ready!"
 
 # Run Doctide agent
 python /agent.py
