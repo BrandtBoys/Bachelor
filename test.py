@@ -31,8 +31,8 @@ repo = g.get_repo(f"{GITHUB_OWNER}/{REPO_NAME}")
 print("repo")
 
 # Commits to compare (replace or allow user input)
-start = 39  # what index of commit the test should start from, have to be higher than "end"
-end = 35  # what index of commit the test should end at
+start = 39   # what index of commit the test should start from, have to be higher than "end"
+end = 32  # what index of commit the test should end at
 
 #set of files which have been modified during the test
 modified_filepaths = set()
@@ -49,9 +49,11 @@ branch = repo.get_branch(branch_name)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Define the base results directory
-os.makedirs("results", exist_ok=True)
-result_file = os.path.join("results", f"{timestamp}.csv")
-with open(result_file, mode="w", newline="", encoding="utf-8") as f:
+os.makedirs("results/semantic_score", exist_ok=True)
+os.makedirs("results/fail_rate", exist_ok=True)
+semantic_score_result_file = os.path.join("results/semantic_score", f"{timestamp}.csv")
+fail_rate_result_file = os.path.join("results/fail_rate", f"{timestamp}.csv")
+with open(semantic_score_result_file, mode="w", newline="", encoding="utf-8") as f:
     header = ["Semantic-Score", "Code", "Original-Comment","Agent-Comment", "Filename", "Agent-Commit"]
     writer = csv.writer(f)
     writer.writerow(header)
@@ -135,7 +137,8 @@ def add_commit_run_agent(commit_sha):
             time.sleep(5)  # Wait and check again
             run = workflow.get_runs()[0]  # Refresh latest run
 
-    create_csv(repo, branch_name, modified_files, commit_sha, result_file)
+    create_csv(repo, branch_name, modified_files, commit_sha, semantic_score_result_file)
+    extract_fail_rate_metric_from_agent()
 
     
 
@@ -276,6 +279,17 @@ def remove_diff_comments(file_language, head_content, commit_content):
     print("No comment found")
     
     return("".join(cleaned_content)+"\n")
+
+def extract_fail_rate_metric_from_agent ():
+    branch = repo.get_branch(branch_name)
+    head_commit_sha = branch.commit.sha
+    try:
+        fail_rate_content = repo.get_contents("fail_rate.csv",ref=head_commit_sha).decoded_content.decode("utf-8")
+        print(fail_rate_content)
+        with open(fail_rate_result_file, mode="a", encoding="utf-8") as f:
+            f.write(fail_rate_content)
+    except:
+        print("No fail_rate file found")
 
 
 

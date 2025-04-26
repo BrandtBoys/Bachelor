@@ -9,6 +9,12 @@ from tree_sitter import Parser, Node
 from tree_sitter_languages import get_language
 import detect_language
 from dt_diff_lib import extract_data, collect_code_comment_range, tree_sitter_parser_init
+import csv
+
+runs = 0
+success_runs = 0
+
+
 
 def main():
 
@@ -63,6 +69,18 @@ def main():
         add_files = [source_path]
         repo.index.add(add_files)
 
+    print("{success_runs}/{runs}")
+
+    fail_rate = os.path.join("fail_rate.csv")
+    fail_rate_exists = os.path.exists(fail_rate)
+    with open(fail_rate, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not fail_rate_exists:
+            writer.writerow(["Successfull runs", "Total runs"])
+        writer.writerow([success_runs, runs])
+
+    repo.index.add(fail_rate)
+
     # Commit changes
     repo.index.commit("Updated inline documentation")
 
@@ -70,9 +88,6 @@ def main():
 
     repo.__del__()
     exit(0)
-
-if __name__ == "__main__":
-    main()
 
 def validate_response_as_comment(language, response):
     """
@@ -131,14 +146,21 @@ def generate_llm_response(file_language, code, old_comment):
     
 
 def run_llm(file_language, h1_content, source_code):
+    global runs, success_runs
     # Extract all function which is in the diff
     code_location = extract_data(True, file_language, h1_content, source_code, collect_code_comment_range)
 
     comment_location =[]
     for code, old_comment, start_byte, end_byte in code_location:
-
+        runs += 1
         llm_response = generate_llm_response(file_language, code, old_comment)
         if validate_response_as_comment(file_language, llm_response.content):
+            success_runs += 1
             comment_location.append(((llm_response.content), start_byte, end_byte))
     
     return comment_location
+
+
+if __name__ == "__main__":
+    main()
+

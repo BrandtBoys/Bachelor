@@ -12,21 +12,7 @@ EXTENSION_TO_LANGUAGE = {
     ".rb": "ruby",
     ".php": "php",
     ".go": "go",
-    ".rs": "rust",
-    ".swift": "swift",
-    ".kt": "kotlin",
-    ".sh": "shell",
-    ".html": "html",
-    ".css": "css",
-    ".json": "json",
-    ".xml": "xml",
-    ".yaml": "yaml",
-    ".yml": "yaml",
-    ".r": "r",
-    ".pl": "perl",
-    ".lua": "lua",
-    ".dart": "dart",
-    ".scala": "scala",
+    ".rs": "rust"
 }
 
 def detect_language(filename):
