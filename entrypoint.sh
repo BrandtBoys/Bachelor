@@ -20,7 +20,7 @@ pip install -r workflow_requirements.txt
 curl -fsSL https://ollama.com/install.sh | sh
 
 # Start Ollama
-ollama serve
+ollama serve > /dev/null 2>&1 &
 
 # Pull Ollama model
 ollama pull llama3.2
