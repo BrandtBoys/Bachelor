@@ -14,7 +14,7 @@ git config --global user.email "DocTide[bot]@users.noreply.github.com"
 git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
 
 # Install doctide.py dependencies
-pip install -r workflow_requirements.txt
+pip install -r /workflow_requirements.txt
 
 # Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
@@ -26,7 +26,7 @@ ollama serve > /dev/null 2>&1 &
 ollama pull llama3.2
 
 # Run Doctide agent
-python agent.py
+python /agent.py
 
 # Test mode:
 if [ $1 ]
