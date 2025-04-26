@@ -1,12 +1,8 @@
-import sys
 from uuid import uuid4
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 import git #gitPython
 import os
-import time
-from tree_sitter import Parser, Node
-from tree_sitter_languages import get_language
 import detect_language
 from dt_diff_lib import extract_data, collect_code_comment_range, tree_sitter_parser_init
 import csv

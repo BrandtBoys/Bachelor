@@ -1,10 +1,12 @@
-on:
-  push:
-    branches:
-      - 'test-agent*'
+on: [push]
 
 jobs:
-  call-workflow-passing-data:
-    uses: BrandtBoys/Bachelor/.github/workflows/update_docs.yml
-    with:
-      testing: true
+  hello_world_job:
+    runs-on: ubuntu-latest
+    name: A job to say hello
+    steps:
+      - name: Hello world action step
+        id: hello
+        uses: BrandtBoys/Bachelor/DocTide@v1
+        with:
+          testing: true
