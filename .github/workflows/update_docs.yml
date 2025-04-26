@@ -56,7 +56,7 @@ jobs:
                 git push origin HEAD
                 
             - name: Create pull request (only if running on main)
-              if: !inputs.testing
+              if: ${{ !inputs.testing }}
               run: gh pr create -B main -H $BRANCH_NAME --fill-first
               env:
                 GH_TOKEN: ${{ github.token }}
