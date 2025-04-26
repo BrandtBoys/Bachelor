@@ -42,13 +42,13 @@ then
     # Checkout back to the caller test-branch
     git checkout "${GITHUB_REF#refs/heads/}"
     # Fetch the update-docs branch, the agent has just made
-    git fetch origin $BRANCH_NAME # An env variable set by the agent script
+    git fetch origin "$BRANCH_NAME" # An env variable set by the agent script
     # Merge test-branch and update-docs branch
-    git merge origin/$BRANCH_NAME
+    git merge origin/"$BRANCH_NAME"
     # Delete the update-docs branch
-    git push -d origin $BRANCH_NAME
+    git push -d origin "$BRANCH_NAME"
     git push origin HEAD
 else
     gh auth setup-git
-    gh pr create -B main -H $BRANCH_NAME --fill-first
+    gh pr create -B main -H "$BRANCH_NAME" --fill-first
 fi
