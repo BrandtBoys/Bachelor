@@ -1,0 +1,10 @@
+on:
+  push:
+    branches:
+      - 'test-agent*'
+
+jobs:
+  call-workflow-passing-data:
+    uses: BrandtBoys/Bachelor/.github/workflows/update_docs.yml
+    with:
+      testing: true
