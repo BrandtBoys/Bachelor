@@ -75,9 +75,33 @@ if __name__ == "__main__":
     main()
 
 def validate_response_as_comment(language, response):
+    """
+    Validates whether a given `response` can be interpreted as a comment in the specified `language`.
+
+    This function parses the response using a Tree-sitter parser and checks:
+    - If the parsed tree consists of a single node:
+        - It must be a comment (`comment` or `block_comment`), or
+        - An expression statement containing a properly enclosed string literal (triple-quoted).
+    - If there are multiple nodes:
+        - Every node must either be a comment or a block comment to be considered valid.
+
+    Args:
+        language: The programming language to be used by the Tree-sitter parser.
+        response (str): The response text to validate.
+
+    Returns:
+        bool: True if the response is valid as a comment, False otherwise.
+    """
     root = tree_sitter_parser_init(language, response.encode("utf-8"))
-    child = root.children[0]
-    return child.type in ["comment", "block_comment"] or (child.type == "expression_statement" and child.children[0].type == "string" and ((child.children[0].text.startswith(b'"""') and child.children[0].text.endswith(b'"""')) or (child.children[0].text.startswith(b"'''") and child.children[0].text.endswith(b"'''"))))
+    children = root.children
+    children_len = len(children)
+    if children_len == 1:
+        child = children[0]    
+        return child.type in ["comment", "block_comment"] or (child.type == "expression_statement" and child.children[0].type == "string" and ((child.children[0].text.startswith(b'"""') and child.children[0].text.endswith(b'"""')) or (child.children[0].text.startswith(b"'''") and child.children[0].text.endswith(b"'''"))))
+    else: 
+        # All children must be comments or block_comments
+        return all(child.type in ["comment", "block_comment"] for child in children)
+
 
 def generate_llm_response(file_language, code, old_comment):
      # Create prompt for LLM
@@ -86,33 +110,21 @@ def generate_llm_response(file_language, code, old_comment):
             You are a documentation assistant.
 
             ## Instructions:
-            - Given the code, make an **only** descriptive comment of the function
-            - follow best comment practice regrading to the file language
-            - if there is a old comment, update that to reflect the changes to the function
-            - your answer will be directly inserted into code of type file language, so you answer has to be able to compile in the give file language
-            - do **not** include the function definition in your answer
-
-            ##file language:
-            {file_language}
+            - Write a function-level documentation for the provided function, following best documentation practice for {program_language}
+            Return **only** the comment
 
             ## Code:
             {code}
-
-            ## Old comment:
-            {old_comment}
-
-            Return **only** the comment:
             """
         )
 
         prompt_input = prompt.format(
             code = code,
-            file_language = file_language,
-            old_comment = old_comment
+            program_language = file_language,
         )
 
         # the LLM does it work
-        llm = ChatOllama(model="llama3.2", temperature=0.1)
+        llm = ChatOllama(model="llama3.2", temperature=0.0)
         llm_response = llm.invoke(prompt_input)
         return llm_response
     
