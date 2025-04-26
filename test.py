@@ -60,28 +60,11 @@ with open(semantic_score_result_file, mode="w", newline="", encoding="utf-8") as
 
 def main():
 
-    #read the content of the agent, and add it into the test environment
-    with open ("agent.py", "r") as f:
-        agent_code = f.read()
-        update_file("agent.py", agent_code)
-
-    with open ("detect_language.py", "r") as f:
-        detect_language_code = f.read()
-        update_file("detect_language.py", detect_language_code)
-    
-    with open ("dt_diff_lib.py", "r") as f:
-        dt_diff_lib_code = f.read()
-        update_file("dt_diff_lib.py", dt_diff_lib_code)
-
-    #Make a requirements file for th dependencies the workflow needs
-    with open ("workflow_requirements.txt", "r") as f:
-        workflow_requirements = f.read()
-        update_file("workflow_requirements.txt", workflow_requirements)
-
-    #read content of the workflow, and add it into the test environment
-    with open (".github/workflows/update_docs.yml","r") as f:
-        workflow_code = f.read()
-        update_file(".github/workflows/update_docs.yml",workflow_code)
+    #read the content of the test_workflow, and add it into the test environment, which enables the test 
+    #repo to call DocTide workflow
+    with open ("test_workflow.yml", "r") as f:
+        test_workflow = f.read()
+        update_file(".github/workflows/test_workflow.yml", test_workflow)
     
     #add loop of commits
     for commit in reversed(commits):
