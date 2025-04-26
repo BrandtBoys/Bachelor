@@ -3,10 +3,10 @@ on: [push]
 jobs:
   DocTide_job:
     runs-on: ubuntu-latest
-    name: A job to say hello
+    name: Run Doctide
     steps:
       - name: run DocTide action
         id: doctide
-        uses: BrandtBoys/Bachelor@v1
+        uses: BrandtBoys/Bachelor@v2
         with:
           testing: true
