@@ -1,6 +1,6 @@
 import csv
 import detect_language
-from dt_diff_lib import extract_data, collect_code_comment_pairs, tree_sitter_parser_init
+from code_diff_utils import extract_data, collect_code_comment_pairs, tree_sitter_parser_init
 from sentence_transformers import CrossEncoder
 
 def create_csv(repo, branch_name, modified_files, commit_sha, result_file):

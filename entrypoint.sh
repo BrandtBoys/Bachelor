@@ -34,7 +34,7 @@ echo "Ollama is ready!"
 ollama pull llama3.2 
 
 # Run Doctide agent
-python /agent.py
+python /agent.py $1
 
 # Fetch the BRANCH_NAME env var into the container
 if [ -f "$GITHUB_ENV" ]; then

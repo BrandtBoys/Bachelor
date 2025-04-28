@@ -1,8 +1,8 @@
-from tree_sitter import Parser, Node
+from tree_sitter import Parser
 from tree_sitter_languages import get_language
 import difflib
 import re
-import uuid
+import os
 
 def get_changed_line_numbers( head_content, commit_content, count_on_head_commit):
     changed_lines = set()
@@ -137,7 +137,7 @@ def extract_data(use_diff, file_language, head_content, commit_content, handler_
 
                             first_node_in_block = block_node.children[0]
                                 
-                            handler_fn(func_node=node, first_node=first_node_in_block, content=commit_content, nodeIdSet=nodeId, result_list=result, mod_lines=set(changed_lines).intersection(line_range))
+                            handler_fn(func_node=node, first_node=first_node_in_block, content=commit_content, nodeIdSet=nodeId, result_list=result, mod_lines=set(changed_lines).intersection(line_range), file_language=file_language)
                             
                 except Exception as e:
                     print(f"error: {e}")
@@ -225,7 +225,7 @@ def collect_comment_lines(first_node, result_list, nodeIdSet, **kwargs):
             result_list.append(line)
 
 #Used in agent
-def collect_code_comment_range(func_node, first_node, content, result_list, nodeIdSet, **kwargs):
+def collect_code_comment_range(func_node, first_node, content, result_list, nodeIdSet, file_language, **kwargs):
     """
     Extracts the source code of a function and any associated comment,
     then appends this data along with byte range information to the result list.
@@ -243,21 +243,27 @@ def collect_code_comment_range(func_node, first_node, content, result_list, node
     Returns:
         None
     """
-    code = content[func_node.start_byte : func_node.end_byte].strip()
-    old_comment = ""
-    last_node_before_block = first_node.parent.prev_sibling
-    _ , start_col = func_node.start_point
-    start_row, _ = last_node_before_block.end_point
-    # Calculating the start_point to right under and one index in from the func def.
-    start_row = start_row
-    start_col = start_col+4
-    start_byte = point_to_byte(content.encode("utf-8"),start_row,start_col)
-    end_byte = start_byte
+    function_code = content[func_node.start_byte : func_node.end_byte].strip()
+    if file_language == "python":
+        # --- specific for python: detect prev function level comment placement (after function definition)---
+        last_node_before_block = first_node.parent.prev_sibling
+        _ , start_col = func_node.start_point
+        start_row, _ = last_node_before_block.end_point
+        # Calculating the start_point to right under and one index in from the func def.
+        start_row = start_row
+        start_col = start_col+4
+        start_byte = point_to_byte(content.encode("utf-8"),start_row,start_col)
+        end_byte = start_byte
+    else:
+        # To make DocTide work for other languages, place logic to to extract
+        # appropriate function level comment placement here (E.g. java, js, c# 
+        # should be above the func def)
+        print("language not supported")
+        return
     comment_node = identify_comment_node(first_node, nodeIdSet)
     if comment_node:
         end_byte = comment_node.end_byte
-        old_comment = content[first_node.parent.start_byte:end_byte] #first_node.parent.start_byte, is the first non whitespace in the block of the function, which should be the function-level comment
-    result_list.append((code, old_comment, start_byte, end_byte))
+    result_list.append((function_code, start_byte, end_byte))
 
 #Used in semantic
 def collect_code_comment_pairs(func_node, first_node, content, result_list, nodeIdSet, **kwargs):
@@ -323,3 +329,23 @@ def edit_diff_restore_comments(file_language, head_content, cleaned_content):
     modified_file_str = "\n".join(modified_file)
 
     return modified_file_str
+
+# Mapping of file extensions to programming languages
+EXTENSION_TO_LANGUAGE = {
+    ".py": "python",
+    ".java": "java",
+    ".js": "javascript",
+    ".ts": "typescript",
+    ".c": "c",
+    ".cpp": "cpp",
+    ".cs": "csharp",
+    ".rb": "ruby",
+    ".php": "php",
+    ".go": "go",
+    ".rs": "rust"
+}
+
+def detect_language(filename):
+    """Detects programming language based on file extension."""
+    _, ext = os.path.splitext(filename)  # Extract file extension
+    return EXTENSION_TO_LANGUAGE.get(ext, None)  # Return language or "unknown"
