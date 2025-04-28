@@ -1,15 +1,21 @@
+# build in python
+import os
+import time
 import csv
+import uuid
 from itertools import islice
 from dotenv import load_dotenv
-from dt_diff_lib import extract_data, collect_comment_lines, edit_diff_restore_comments
-import os
-import uuid
-import github #pyGithub
-import detect_language
 from datetime import datetime
-import time
+
+# external dependencies
+import github #pyGithub
 from github.InputGitTreeElement import InputGitTreeElement
+
+# internal dependencies
+import detect_language
 from metrics import create_csv
+from dt_diff_lib import extract_data, collect_comment_lines, edit_diff_restore_comments
+
 
 load_dotenv()
 
