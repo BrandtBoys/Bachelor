@@ -10,7 +10,6 @@ from datetime import datetime
 import time
 from github.InputGitTreeElement import InputGitTreeElement
 from metrics import create_csv
-import uuid
 
 load_dotenv()
 
