@@ -14,7 +14,7 @@ git config --global user.email "DocTide[bot]@users.noreply.github.com"
 git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
 
 # Install doctide.py dependencies
-pip install -r /workflow_requirements.txt
+pip install -r /requirements_doctide.txt
 
 # Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
@@ -34,7 +34,7 @@ echo "Ollama is ready!"
 ollama pull llama3.2 
 
 # Run Doctide agent
-python /agent.py $1
+python /doctide.py $1
 
 # Fetch the BRANCH_NAME env var into the container
 if [ -f "$GITHUB_ENV" ]; then

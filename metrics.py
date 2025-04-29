@@ -1,6 +1,5 @@
 import csv
-import detect_language
-from code_diff_utils import extract_data, collect_code_comment_pairs, tree_sitter_parser_init
+from code_diff_utils import extract_data, collect_code_comment_pairs, detect_language
 from sentence_transformers import CrossEncoder
 
 def collect_semantic_score(repo, branch_name, modified_files, commit_sha, result_file):
@@ -13,8 +12,8 @@ def collect_semantic_score(repo, branch_name, modified_files, commit_sha, result
     comment_pairs = []
     comment_metedata = []
 
-    for filename, content in modified_files:
-        file_language = detect_language.detect_language(filename) 
+    for filename in modified_files:
+        file_language = detect_language(filename) 
         if not file_language:
             continue
         original_content = repo.get_contents(filename,ref=commit_sha).decoded_content.decode() # original commit

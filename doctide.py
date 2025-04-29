@@ -11,7 +11,6 @@ from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 
 # Internal dependencies
-import detect_language
 from code_diff_utils import extract_data, collect_code_comment_range, tree_sitter_parser_init, detect_language
 
 # Global vars to keep track of success rate
