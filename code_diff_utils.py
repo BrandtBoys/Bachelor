@@ -1,8 +1,11 @@
-from tree_sitter import Parser
-from tree_sitter_languages import get_language
-import difflib
+# Build in python
 import re
 import os
+
+# External dependencies
+import difflib
+from tree_sitter import Parser
+from tree_sitter_languages import get_language
 
 class CommentNode:
     '''A class to enable merging leading comments into one object'''
@@ -431,6 +434,41 @@ def remove_diff_comments(file_language, head_content, commit_content):
     print("No comment found")
     
     return("".join(cleaned_content)+"\n")
+
+# Helper function, used in metrics
+def get_agent_diff_content(repo, filename, commit_sha, file_language):
+    """
+    Extract comment/code pairs from a file that changed in a specific commit using custom Tree-sitter diff analysis from the dt_diff_lib library.
+
+    This function retrieves the content of a file before and after a given commit, computes the diff between them,
+    and extracts function-level code and associated comments that were affected. It uses Tree-sitter to parse and
+    analyze the changed portions of the code.
+
+    Parameters
+    ----------
+    repo : github.Repository.Repository
+        The GitHub repository object from the PyGithub API.
+    filename : str
+        The path to the file being analyzed within the repository.
+    commit_sha : str
+        The SHA of the commit where changes are to be analyzed.
+    file_language : str
+        The programming language of the file (e.g., "python", "javascript").
+
+    Returns
+    -------
+    list
+        A list of extracted comment/code pairs (or related structures), as returned by `collect_code_comment_pairs`.
+
+    Notes
+    -----
+    - This function assumes that `collect_code_comment_pairs` is a valid handler function compatible with `extract_data`.
+    - Only function definitions affected by the diff will be analyzed.
+    """
+    commit = repo.get_commit(sha=commit_sha)
+    old_content = repo.get_contents(filename, ref=commit.parents[0].sha).decoded_content.decode() # test commit
+    new_content = repo.get_contents(filename, ref=commit.sha).decoded_content.decode() # agent commit
+    return extract_data(True, file_language, old_content, new_content, collect_code_comment_pairs)
 
 # Mapping of file extensions to programming languages
 EXTENSION_TO_LANGUAGE = {
