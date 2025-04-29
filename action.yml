@@ -1,4 +1,4 @@
-name: 'DocTide'
+name: 'DocTidetest'
 description: 'GitHub workflow that uses an LLM agent to add function-level documentation for new or modified functions in the latest commit, triggered by user-defined pushes'
 inputs:
   testing:
