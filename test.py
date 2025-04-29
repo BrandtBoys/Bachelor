@@ -54,9 +54,9 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Define the base results directory
 os.makedirs("results/semantic_score", exist_ok=True)
-os.makedirs("results/fail_rate", exist_ok=True)
+os.makedirs("results/success_rate", exist_ok=True)
 semantic_score_result_file = os.path.join("results/semantic_score", f"{timestamp}.csv")
-fail_rate_result_file = os.path.join("results/fail_rate", f"{timestamp}.csv")
+success_rate_result_file = os.path.join("results/success_rate", f"{timestamp}.csv")
 with open(semantic_score_result_file, mode="w", newline="", encoding="utf-8") as f:
     header = ["Semantic-Score", "Code", "Original-Comment","Agent-Comment", "Filename", "Agent-Commit"]
     writer = csv.writer(f)
@@ -125,7 +125,7 @@ def add_commit_run_agent(commit_sha):
             run = workflow.get_runs()[0]  # Refresh latest run
 
     create_csv(repo, branch_name, modified_files, commit_sha, semantic_score_result_file)
-    extract_fail_rate_metric_from_agent()
+    extract_success_rate_metric_from_agent()
 
     
 
@@ -267,16 +267,16 @@ def remove_diff_comments(file_language, head_content, commit_content):
     
     return("".join(cleaned_content)+"\n")
 
-def extract_fail_rate_metric_from_agent ():
+def extract_success_rate_metric_from_agent ():
     branch = repo.get_branch(branch_name)
     head_commit_sha = branch.commit.sha
     try:
-        fail_rate_content = repo.get_contents("fail_rate.csv",ref=head_commit_sha).decoded_content.decode("utf-8")
-        print(fail_rate_content)
-        with open(fail_rate_result_file, mode="a", encoding="utf-8") as f:
-            f.write(fail_rate_content)
+        success_rate_content = repo.get_contents("success_rate.csv",ref=head_commit_sha).decoded_content.decode("utf-8")
+        print(success_rate_content)
+        with open(success_rate_result_file, mode="a", encoding="utf-8") as f:
+            f.write(success_rate_content)
     except:
-        print("No fail_rate file found")
+        print("No success_rate file found")
 
 
 
