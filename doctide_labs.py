@@ -13,7 +13,7 @@ from github.InputGitTreeElement import InputGitTreeElement
 
 # internal dependencies
 from metrics import create_csv
-from code_diff_utils import extract_data, collect_comment_lines, edit_diff_restore_comments, detect_language
+from code_diff_utils import remove_diff_comments, edit_diff_restore_comments, detect_language
 
 
 load_dotenv()
@@ -227,46 +227,6 @@ def update_file(file_name, content):
         else:
             raise  # Raise other unexpected errors
 
-def remove_diff_comments(file_language, head_content, commit_content):
-    """
-    Remove comments from functions that were changed in a commit diff.
-
-    This function uses Tree-sitter to identify comments within function definitions that are
-    affected by a code diff (between `head_content` and `commit_content`). It then removes
-    those specific comment byte ranges from the `commit_content`.
-
-    Parameters
-    ----------
-    file_language : str
-        The programming language of the file (e.g., "python", "javascript") used to initialize the Tree-sitter parser.
-    head_content : str
-        The content of the file in the base (head) revision, used for diff comparison.
-    commit_content : str
-        The content of the file in the new (commit) revision, from which comments will be removed.
-
-    Returns
-    -------
-    str
-        The updated source code with targeted diff-related comments removed.
-    """
-  
-    # Extract comment lines
-    diff_comment_lines = set(extract_data(True, file_language, head_content, commit_content, collect_comment_lines))
-    
-    content = commit_content.splitlines(keepends=True)
-    cleaned_content = []
-    counter = 1
-    if diff_comment_lines:
-        for line in content:
-            if counter not in diff_comment_lines:
-                cleaned_content.append(line)
-            counter += 1
-    else:
-        return commit_content+"\n"
-    print("No comment found")
-    
-    return("".join(cleaned_content)+"\n")
-
 def extract_success_rate_metric_from_agent ():
     branch = repo.get_branch(branch_name)
     head_commit_sha = branch.commit.sha
@@ -277,8 +237,6 @@ def extract_success_rate_metric_from_agent ():
             f.write(success_rate_content)
     except:
         print("No success_rate file found")
-
-
 
 if __name__ == "__main__":
     main()
