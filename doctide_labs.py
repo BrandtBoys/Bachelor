@@ -12,7 +12,7 @@ import github #pyGithub
 from github.InputGitTreeElement import InputGitTreeElement
 
 # internal dependencies
-from metrics import create_csv
+from metrics import collect_semantic_score
 from code_diff_utils import remove_diff_comments, edit_diff_restore_comments, detect_language
 
 
@@ -124,7 +124,7 @@ def add_commit_run_agent(commit_sha):
             time.sleep(5)  # Wait and check again
             run = workflow.get_runs()[0]  # Refresh latest run
 
-    create_csv(repo, branch_name, modified_files, commit_sha, semantic_score_result_file)
+    collect_semantic_score(repo, branch_name, modified_files, commit_sha, semantic_score_result_file)
     extract_success_rate_metric_from_agent()
 
     

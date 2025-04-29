@@ -3,7 +3,7 @@ import detect_language
 from code_diff_utils import extract_data, collect_code_comment_pairs, tree_sitter_parser_init
 from sentence_transformers import CrossEncoder
 
-def create_csv(repo, branch_name, modified_files, commit_sha, result_file):
+def collect_semantic_score(repo, branch_name, modified_files, commit_sha, result_file):
     #fetch the latest changes to the test branch
     branch = repo.get_branch(branch_name)
     #fetch the HEAD commit of test branch
