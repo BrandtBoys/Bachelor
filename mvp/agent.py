@@ -1,6 +1,7 @@
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 import git
+import os
 
 #create branch
 repo = git.Repo("../.")
@@ -46,6 +47,7 @@ llm_response = llm.invoke(prompt_input)
 with open(docs_path, "w") as f:
     f.write(llm_response.content)
 
+print(os.getcwd())
 # Add changes
 add_files = ["./docs/software_docs.md"]
 repo.index.add(add_files)
