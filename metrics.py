@@ -17,7 +17,7 @@ def collect_semantic_score(repo, branch_name, modified_files, commit_sha, result
     comment_pairs = []
     comment_metedata = []
 
-    for filename in modified_files:
+    for filename, _ in modified_files:
         file_language = detect_language(filename) 
         if not file_language:
             continue
