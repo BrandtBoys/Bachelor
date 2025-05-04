@@ -60,7 +60,7 @@ repo.index.commit("Updated docs files")
 # except git.exc.GitCommandError as e:
 #     print(f"error: {e}")
 
-repo.remotes.origin.push(set_upstream=True)
+repo.remotes.origin.push(refspec=f"{branch_name}:{branch_name}",set_upstream=True)
 
 repo.__del__()
 exit(0)
