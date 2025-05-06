@@ -1,6 +1,10 @@
 # Agenda
-## due diligence
- - in our related work we have used X source, just to briefly justify our intuition and choice of approach.
+## Related work
+ - when have we done our due diligence?
+ - AI-Based CI: It is not a direcly related work, but the field of CS looks at how LLM can improve the CI.
+
+## Background or Introduction
+ - Automation, CI and DevOps
 
 ## Wording of subquestions
  - Is it okay that we split into subquestions, or should we call it areas of interest?
