@@ -22,20 +22,20 @@ Running the experiment resulted in the collection of \textbf{215} unique sets of
 \label{fig:sem_hist}
 \end{figure}
 
-Before being able to infer any information from this result, the result is processed in order to qualitatively identify what merits as a \textit{'good'} score in semantic similarity. The three quality buckets \textit{'Low-'}, \textit{'Medium-'} and \textit{'High similarity'}, and the thresholds between these is identified as follows:
+Before being able to infer any information from this result, the result is processed in order to qualitatively identify the thresholds between the three quality buckets \textit{'Low-'}, \textit{'Medium-'} and \textit{'High similarity'} as described in section \cref{sec:method}.:
 \\\\
-First a \textbf{sample} is taken from the result pairs, which all contain the original comment, the agent generated comment and the semantic score. As \cref{fig:sem_hist} shows the results following a normal distribution, the \textbf{sample} is taken to be representing by utilizing \textit{stratified sampling}\footnote{\url{https://www.geeksforgeeks.org/stratified-sampling-in-pandas/}}. The column containing the semantic score is then disabled, and each pair is qualitatively inspected by comparing the original comment to the agent generated comment, before finally being assigned to one of the three buckets described above. For the entire results of the categorization of the sample, see table in \cref{appendix:sample_table}.
+First a \textbf{sample} is taken from the result pairs, which all contain the original comment, the agent generated comment and the semantic score. As seen in \cref{fig:sem_hist} the results follows a normal distribution, so a \textbf{sample} is taken to be representing of this, by utilizing \textit{stratified sampling}\footnote{\url{https://www.geeksforgeeks.org/stratified-sampling-in-pandas/}}. The column containing the semantic score is then hidden, and each pair is qualitatively inspected by comparing the original comment to the agent generated comment, before finally being assigned to one of the three quality buckets. For the entire results of this categorization of the sample, see table in \cref{appendix:sample_table}.
 
-Next the \textbf{sample} is grouped by the assigned buckets, and summary statistics is calculated as seen in \textcolor{red}{Indsæt tabel over dette efter labeling stadie} and finally the thresholds is then calculated by summing the first and third quartile from the higher and lower bucket respectively.:
+Next the \textbf{sample} is grouped by the assigned buckets, and summary statistics is calculated, before finally the thresholds is calculated by summing the maximum and minimum value higher and lower bucket respectively.:
 \[
-Low\_to\_medium = \frac{Q1_{medium}+Q3_{low}}{2} = \textcolor{red}{???}
+Low\_to\_medium = \frac{Max_{low}+Min_{medium}}{2} = 0.5590
 \]
 \[
-Medium\_to\_high = \frac{Q1_{high}+Q3_{medium}}{2} = \textcolor{red}{???}
+Medium\_to\_high = \frac{Max_{medium}+Min_{high}}{2} = 0.6460
 \]
 
 \subsubsection{Results}
-In \cref{fig:sem_box} the results of the experiment is plotted against the quality thresholds identified above. Out of the 117 datapoints collected, \textcolor{red}{Skriv hvordan de ligger i forhold til thresholds med outliers, quantiles osv. - Venter på labeling}
+In \cref{fig:sem_box} the results of the experiment is plotted against the quality thresholds as identified in \cref{sec:method}, and from this it is shown that the majority of the data points falls within the buckets of \textit{medium-} and \textit{high similarity}, with bucket of \textit{medium similarity} as the must frequent with more than 50\% of the data points.
 
 \label{sec:sem_results}
 \begin{figure}[H]
@@ -44,6 +44,9 @@ In \cref{fig:sem_box} the results of the experiment is plotted against the quali
 \caption{Box plot showing the summary-statistics of the semantic scores against the identified thresholds.}
 \label{fig:sem_box}
 \end{figure}
+
+\noindent
+The exact distribution across the identified thresholds is as follows: 78.14\% of the results has a semantic score above the low threshold, and 22.79\% is above the high threshold, leaving 55.35\% to fall in the bucket of \textit{medium similarity} between the two thresholds.
 
 \subsection{Reliability}
 When running the DocTide agent with the 'testing' flag set to true, a success rate is collected for how many attempts ends with the agent generating documentation in the correct format.
