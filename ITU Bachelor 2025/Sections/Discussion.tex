@@ -17,16 +17,16 @@ Execution times came upwards to 3 hours on merge commits, where multiply files w
 \subsection{Q2 Discussion}
 \label{sec:DiscussionQ2}
 "\textit{\subquestionII}"
-In attempt to answer \textbf{Q2} we used the `stsb-roberta-base’ model from Sentence transformer to calculate the semantic similarities between function-level documentation created by the developers of Flask and the generated comments made by DocTide. To understand what these score actually inferred we picked 10\% of the
+A semantic similarity score should, opposite to just looking at character comparison, give a quantitative measure for how much of the semantic meaning is present between two texts. This is why we chose to use the semantic similarity model from Sentence Transformers to compare the similarity between function-level documentation created by a human developer and by DocTide, to get a understanding of how similar to what the human developer intent to explain in a function-level documentation DocTide manages to generate. And in our qualitative analysis of the generated semantic similarity score(\Cref{sec:identifying thresholds}) we found this models scores to be a good indicate for this measurement. But to answer the sub-question \textbf{Q2} the measurement alone falls a bit short. Even though this is a great indication for what kind of value you can expect a system like DocTide to delivery in terms of the 
 
 
-
+But with DocTides limited context understanding, only the source code of the function, 
 \subsection{Q3 Discussion}
 \label{sec:DiscussionQ3}
 "\textit{\subquestionIII}"
 The results of the experiment as described in \cref{sec:suc_results} shows a \textit{'success\_rate'} for DocTide at \textit{68.57\%}, meaning that \textit of the time the DocTide agent has attempted to generate documentation, it has resulted in documentation following the format described in \cref{sec:method} which has been inserted in the code. 
 \subsubsection*{Current documentation coverage}
-To discuss the implications of this, the python tool \textit{'docstr-coverage'}\footnote{\url{https://pypi.org/project/docstr-coverage/}} is ran on the same repository as the experiment was executed. This tool scans the entire codebase of the repository, identifies possible locations for method-level documentation, and meassures this coverage of these. As seen in \cref{lst:doc_percent_flask} this shows that the repository has method level documentation coverage of\textit{38.7\%}, implying that if the same project was ran with only DocTide handling documentation, the project would have a higher coverage of method level documentation than its current state.
+To discuss the implications of this, the python tool \textit{'docstr-coverage'}\footnote{\url{https://pypi.org/project/docstr-coverage/}} is ran on the same repository as the experiment was executed. This tool scans the entire codebase of the repository, identifies possible locations for method-level documentation, and meassures this coverage of these. As seen in \cref{lst:doc_percent_flask} this shows that the repository has method level documentation coverage of \textit{38.7\%}, implying that if the same project was ran with only DocTide handling documentation, the project would have a higher coverage of method level documentation than its current state.
 
 \begin{lstlisting}[language=sh, label={lst:doc_percent_flask},      caption= Ratio of method level documentation in flask repository]
     Needed: 8193  -  Found: 3169  -  Missing: 5024
