@@ -1,0 +1,12 @@
+\section{Reliability}
+\textbf{Q3}: How reliable is DocTide with regards to generating documentation in the correct format?
+\subsection{Reliability score}
+The core functionality of DocTide is to generate code which can be injected into the source code, and become function level source code documentation. Therefor we see DocTides reliability to format its generated documentation correctly as a measurement fo success. A correct format means that the whole contribution is of a valid comment type in the given program language, implying that:
+\begin{enumerate}
+    \item There is no executable code
+    \item It can compile in the giving program language
+\end{enumerate}
+In our proposed system, we ensure this by a validation function \textit{validate\_response\_as\_comment()}, which is run for every response created. This function analyses the response from the LLM by creating a AST of the response using Tree-sitter. And then check that all nodes is of type comment.
+We calculate the score by count all successful formatted responses and all possible responses and then simply calculate the ratio between those two numbers.
+\subsection{Results}
+\subsection{Discussion of result}
