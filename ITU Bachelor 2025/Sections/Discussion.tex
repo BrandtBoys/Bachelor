@@ -35,26 +35,23 @@ To discuss the implications of this, the python tool \textit{'docstr-coverage'}\
 \subsubsection*{Format failures}
 When looking at random samples collected from the 31.01\% of the dataset where the documentation generated does not follow the format described in \cref{sec:method}, two common reasons stands out as recurring reasons to format failure: the agent either misses the set of quotes actively 'closing' the comment, or the agent returns a copy of the method for which it is generating documentation as a prefix or suffix to the documentation itself. 
 
-DocTide follows a very conservative approach where the attempt at generating documentation for a given function, is aborted when documentation not following the correct format is produced. After identifying the pattern of two common recurring reasons for format failure, it is hypothesized that integrating some form of internal feedback mechanism biased towards handling these exact cases could lead to an improvement in the 'success\_rate' metric. Following \cite{wang2024survey} one consideration could be to implement \textit{model feedback} where internally an LLM is used instead of DocTides static format check, to decide whether the generated documentation follows correct format and to handling \textit{re-prompting} in the case that it does not. Similar to what is discussed in \cref{sec:DiscussionQ1}, this is limited by the capabilities of the LLM leading to a tradeoff between autonomy and trust.
+DocTide follows a very conservative approach where the attempt at generating documentation for a given function, is aborted when documentation not following the correct format is produced. After identifying the pattern of two common recurring reasons for format failure, it is hypothesized that integrating some form of internal feedback mechanism biased towards handling these exact cases could lead to an improvement in the 'success\_rate' metric. Similar to what is discussed in \cref{sec:DiscussionQ1}, this is limited by the capabilities of the LLM leading to a tradeoff between autonomy and trust.
 
 \subsection{Overall discussion}
 Following the design for LLM-based autonomous agents proposed by Wang et al.\cite{wang2024survey} has provided great direction and considerations on how to extend the autonomy of the agent and practical approaches to how to achieve that. However the development and integration of DocTide as a LLM-based autonomous agent has revealed a clear bias in our developing approach, which has shown evident in the solutions we resolved to when facing the challenges described in \Cref{sec:DiscussionQ1}. With a mindset of software developers working towards a working product, the limited size/capabilities of the LLM model the integration into GitHub Actions required, and the vitality of not injecting working code into the code base let to the identification of a notion of tradeoff between trust and autonomy. This notion was not something we found in research prior to the development of DocTide, but has show to be a beneficial cornerstone for the practical development of autonomous agents that aims to integrate into restriction of existing systems. For the development of DocTide, this resulted in the level of autonomy being scaled back to a minimum in order to ensure predictable behavior. This scale back and working with a more simple goal as we have done, with many of their concepts being derived from quiet complex systems, it have be challenging to keep a clear separation of the proposed modules when applying the theory into practice. Especial since their design relied on every module being driven by an LLM, and our prototype only using one instance of an LLM the lines became more blurred to the point where we decided to see the planing module and the action module as one, since it followed a sequential execution, and all actions followed the pre-defined plan. The level of trust in the capabilities of the LLM's utilized in the autonomous agent has shown to be what dictates the obtainable autonomy of the agent. As the field of LLM's and their capabilities currently is experiencing rapid evolution, it is therefore hypothesized that the boundaries and limitation of developing integrated autonomous agents capable of automating the task of making software documentation as well will be pushed. Why still choosing to follow this design proposal came to the potential that it offers, and how very few steps from the version DocTide is in now, will utilize the benefits of the structure.
 \\\\
-As stated in the \cref{sec:intro}, missing or outdated documentation as a result of developers lacking time is identified as an important issue that is frequently encountered. As a Github Action DocTide integrates seamlessly into the notion of CI on Github, aiming to mitigate this.
+As stated in the \cref{sec:intro}, missing or outdated documentation as a result of developers lacking time is identified as an important issue that is frequently encountered. 
 
-With 78.14\‰ of the documentation generated by DocTide achieving \textit{medium-} and \textit{high similarity} to documentation produced by human developers, and a \textit{'success rate'} of 68.99\% on generating and reintegrating documentation in the correct format, DocType as a prototype proves 
-
-
-
-
-Thus enabling the development of DocTide as an \textcolor{red}{autonomous??} agent that through the inherent nature of it being an Github Action integrates into the notion of CI in Github. 
-\\\\
-
+With 78.14\% of the documentation generated by DocTide achieving \textit{medium-} and \textit{high similarity} to documentation produced by human developers, and a \textit{'success rate'} of 68.99\% on generating and reintegrating documentation in the correct format, DocTide as a prototype manages to support the claim that an integrated autonomous agent would be able to mitigate the severity of the missing or outdated documentation. The direct integration into GitHub actions enables these benefits without the need of human interference, changing the state of documentation from opt-in to opt-out.
 
 \subsection{Future work}
-We will here present the next DocTide could 
-\begin{itemize}
-    \item more intent 
-        \item persistent memory with config files, both users of DocTide can use to define some overarcing concepts, and to store learnings made from modifying in PRs
-        \item 
-\end{itemize}
+We will here describe which next step for DocTide we would be interested to investigate:
+\subsubsection*{Gaining more context}
+As mentioned in \Cref{sec:DiscussionQ2}, increasing DocTides context of the source code and the context in which the code is would maybe be a factor to increasing its level of similarity. This could simply be done in giving it the code of the whole file in which the function is situated in, or make an dependency analysis to give give more knowledge of the surrounding context.
+\subsubsection*{Let the agent validate its response}
+As discussed in \cref{sec:DiscussionQ3} it is hypothesized that implementing a feedback mechanism to enable re-attempting the generation of documentation after failing on format in the first attempt, could lead to an increase in the \textit{'succes rate'} of the 
+
+Following \cite{wang2024survey} one consideration could be to implement \textit{model feedback} where internally an LLM is used instead of DocTides static format check, to decide whether the generated documentation follows correct format and to handling \textit{re-prompting} in the case that it does not.
+
+\subsubsection*{Enable DocTide to evolve based on feedback from Pull Requests}
+As developers will be prompted with a pull request, containing DocTides generated function level documentation, they will either accept it, modify it or reject it. A future work could be to find a way to harvest this valuable feedback, to enable DocTide to learn and evolve by saving its learning to a persistent memory structure.
