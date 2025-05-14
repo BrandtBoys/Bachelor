@@ -25,18 +25,26 @@ This could hypothesize that introducing more context to DocTide would improve it
 "\textit{\subquestionIII}"
 The results of the experiment as described in \cref{sec:suc_results} shows a \textit{'success\_rate'} for DocTide at \textit{68.99\%}, meaning that \textit{68.99\%} of the time the DocTide agent has attempted to generate documentation, it has resulted in documentation following the format described in \cref{sec:method} which has been inserted back into the code base. 
 \subsubsection*{Current documentation coverage}
-To discuss the implications of this, the python tool \textit{'docstr-coverage'}\footnote{\url{https://pypi.org/project/docstr-coverage/}} is ran on the same repository as the experiment was executed. This tool scans the entire codebase of the repository, identifies possible locations for method-level documentation, and meassures this coverage of these. As seen in \cref{lst:doc_percent_flask}, the results of this shows that the repository has method level documentation coverage of \textit{38.7\%}, implying that if the same project was ran with only DocTide handling documentation, the project would have a higher coverage of method level documentation than its current state.
+To discuss the implications of this, the python tool \textit{'docstr-coverage'}\footnote{\url{https://pypi.org/project/docstr-coverage/}} is ran on the same repository as the experiment was executed. This tool scans the entire codebase of the repository, identifies possible locations for method-level documentation, and meassures this coverage of these. As seen in \cref{lst:doc_percent_flask}, the results of this shows that the repository has method level documentation coverage of \textit{38.7\%}, implying that if the same project was ran with only DocTide handling documentation, the project would have a higher coverage of method level documentation than its current state. Though as found in \cref{sec:sem_results} not with the same level of information conveyed in each comment.
 
 \begin{lstlisting}[language=sh, label={lst:doc_percent_flask},      caption= Ratio of method level documentation in flask repository]
     Needed: 8193  -  Found: 3169  -  Missing: 5024
     Total coverage: 38.7%  -  Grade: Not good
 \end{lstlisting}
-\begin{itemize}
-    \item The score reflects that the agent only has one attempt. (vs. reprompting it self)
-    \item Discuss common pitfalls of the metric, se på stikprøver. Måske bind sammen med den før, hvis der er common pitfalls, så kunne dette måske integreres ind i reprompting
-\end{itemize}
+
+\subsubsection*{Format failures}
+When looking at random samples collected from the 31.01\% of the dataset where the documentation generated does not follow the format described in \cref{sec:method}, two common reasons stands out as recurring reasons to format failure: the agent either misses the set of quotes actively 'closing' the comment, or the agent returns a copy of the method for which it is generating documentation as a prefix or suffix to the documentation itself. 
+
+DocTide follows a very conservative approach where the attempt at generating documentation for a given function, is aborted when documentation not following the correct format is produced. After identifying the pattern of two common recurring reasons for format failure, it is hypothesized that integrating some form of internal feedback mechanism biased towards handling these exact cases could lead to an improvement in the 'success\_rate' metric. Following \cite{wang2024survey} one consideration could be to implement \textit{model feedback} where internally an LLM is used instead of DocTides static format check, to decide whether the generated documentation follows correct format and to handling \textit{re-prompting} in the case that it does not. Similar to what is discussed in \cref{sec:DiscussionQ1}, this is limited by the capabilities of the LLM leading to a tradeoff between autonomy and trust.
+
 \subsection{Overall discussion}
 Remember to use motivation from introduction
+
+Building and integrating a LLM-based autonomous agent has exposed a clear bias in our developing approach, which was evident in the solutions we resolved to when facing the challenges described in \Cref{sec:DiscussionQ1}. With a mindset of software developers working towards a working product, the level of autonomy was kept to a minimum to ensure predictable behavior. This notion of a balance between trust and autonomy was a great help to articulate our motivation for our decisions, which we had not meet in research, but we find to be true and relevant with more and more AI-based tools being integrated in the development life cycle, Developers have to make up how much they trust given systems to act autonomously in their code, especial when it comes to code generation. But our "conservative" approach did make us wonder if we had removed so much autonomy to the point where DocTide could not be considered as an autonomous agent. How ever we believe DocTide to rightfully be considered autonomous since it stills senses it environment 
+
+
+But with that said, the use of the proposed design of LLM-based autonomous agents by Wang et al.\cite{wang2024survey} provided great direction and considerations on how to extend the autonomy of the agent and practical approaches to how to achieve that. Which is why we see many untried approaches which we believe could increase the performance and autonomy of DocTide. 
+
 
 
 Level of autonomy: We set of with a medium level of autonomy, but with the limited size/capabilities of the LLM model, and the vitality of not injecting working code into the code base, we limited the level of autonomy to a minimum. With more careful approaches, this level could be rissen, by letting the LLM asses its own output, and make it evaluate if it is a satisfactory documentation of the code.
