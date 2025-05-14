@@ -1,0 +1,41 @@
+\section{Evaluation framework - DocTide Labs}
+\label{sec:DocTideLabs}
+A long side the development of the LLM-based autonomous agent DocTide, this paper also proposes a framework, for conducting \textit{'objective evaluation'} of said agents behavior and performance. Moving forward, this framework will be referred to as DocTide Labs.
+
+DocTide Labs is an implementation of a \textit{'real world simulation protocol'}, in which the goal is to simulate an immersive environment where in the agent autonomously can complete tasks while chosen metrics\footnote{\textcolor{red}{For the scope of this paper the only metrics collected are 'semantic similarity' and 'success rate', but the implemented evaluation protocol allows to be reused for collection of further metrics, if these where to be implemented.}} are measured and collected\cite{wang2024survey}.
+\\ \\
+DocTide is developed as a prototype to automate the task of making function-level documentation within the environment of a Github repository, which is why DocTide Labs is developed to simulate exactly that. By replaying the commit history of a chosen Github repository and removing human generated documentation, DocTide Labs simulates the environment in which the agent is developed to run.
+\\ \\
+\textcolor{red}{Måske kunne den her section stadig godt bruge noget motivation til hvorfor vi kører real world simulation protocol, og ikke bare banker derudaf med testcases. Fokus på integrationen eller CI? Ved ikke, måske er det også fint sådan her?}
+
+\subsection{Functionality\textcolor{red}{(Design?)} of DocTide Labs}
+The logic and functionality of DocTide Labs is explained in the following sections. For a visualization of the entire flow of state when running an evaluation, see Figure \ref{fig:flow_labs}.
+\\ \\
+The only prerequisites to run DocTide Labs is a repository that you want to simulate in the evaluation, together with a Github Access Token for an account that has access to said repository.
+
+Furthermore before running, the part of the commit history to simulate during the evaluation is also specified.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{Figures/doctide_labs_flow_chart.png}
+\caption{The flow of the state the evaluation setup has, how commits are collected from a repository, preprocessed, and then committed to the test-branch, where DocTide is invoked, and finally metrics are collected}
+\label{fig:flow_labs}
+\end{figure}
+
+\subsubsection{Data Collection and setup}
+The first step in DocTide Labs is to collect a 'dataset' of commits to use in the evaluation, which is done by fetching the specified commits from the chosen repository. A Test branch is then created by checking out the oldest of the fetched commits, making this a 'snapshot copy' of the chosen repository in a previous time in history.
+
+Finally all python files is cleaned from existing comments, a workflow utilizing the DocTide Action is manually added to the repository, enabling DocTide Labs to trigger this later in the evaluation.
+
+\subsubsection{Commit processing}
+Next DocTide Labs then iterates through the fetched commits, processing each of them sequentially. In each iteration, first a diff between the commit and the head of the test branch is calculated, which serves to identify the files modified in the commit at hand. In order to best simulate the environment and conditions for which the agent is developed, each file in from the commit is then 'cleaned from comments'. This 'cleaning step' utilizes Tree-sitter\footnote{\url{https://tree-sitter.github.io/tree-sitter/}} to identify and remove all function-level documentation in the file, leaving only the code changes introduces with the commit. The diff of the cleaned file, and the head of the test branch is used to restore any documentation introduced by the agent in previous iterations.
+
+Each 'cleaned commit' is then committed to the test branch, finalizing the environment enabling the simulation of the agent running continuously on live repository that develops over time. Before finally the workflow utilizing the DocTide Action is triggered.
+
+\subsubsection{Agent execution and metric collection}
+When triggered the workflow runs the agent, which generates the function-level documentation based on the new commit. The Doctide Action is run with the 'testing' flag set to true, which allows it to directly merge in its generated documentation, enabling the continuous running of multiple iterations, without human intervention during the evaluation. 
+
+Further more this enables the collection of metrics, which upen end of evaluation is retuned in two csv files.
+
+\textcolor{red}{Ved ikke om denne gennemgang er i vinkel, eller om den bare gengiver hvad der står i visualiseringen. Synes det er svært lige at adskille disse, så rettelser er som altid velkomne :) }
+

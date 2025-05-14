@@ -1,0 +1,47 @@
+\section{Background}
+
+\subsection{Software documentation}
+Sommerville \cite{sommerville2001software} propose to generally sorting software documentation into two distinct classifications:
+\begin{itemize}
+    \item Process documentation
+    \item Product documentation
+\end{itemize}
+Where \textit{process documentation} enables management of the development of software, and includes types of documentation like plans, schedules or quality standards. \textit{Product documentation} covers describing the developed system, and can again be split into subcategories: \textit{user documentation} and \textit{system documentation}, the latter containing documentation embedded within code, generally referred to as \textit{source code documentation}.
+\\\\
+In their review of literature on the topic of automated software documentation, Rai et al. \cite{rai2022review} categorizes \textit{source code documentation} into three levels:
+\begin{itemize}
+    \item \textbf{Statement level:} Generally know as inline comments, used to explain small distinct pieces of the code.
+    \item \textbf{Method level:} Covering informative naming, as well as summarization of methods or functions.
+    \item \textbf{Class level:} Summarization of entire classes of code.
+\end{itemize}
+
+\subsection{Autonomous agent}
+\textcolor{red}{Husk at vi evt skulle introducerer de forskellige typer af agenter, "reactiv" og sådan.}
+\label{sec:Autonomous agent}
+The concept of \textit{ai agents} is gaining significant traction in the landscape of modern software development, with terminology such as \textit{agent}, \textit{autonomous agent} and \textit{ai agent} often used interchangeably. As shown in Fig. 3 of Wang et al.\cite{wang2024survey} the number of papers published in the field of LLM-based autonomous agents grew from near zero to beyond 160, between January 2021 to August 2023 alone.
+
+A formal definition of the notion of \textit{autonomous agents} and how this differs from just "normal" software, is proposed by Franklin et al. as follows:
+\begin{quote}
+    "An \textbf{autonomous agent} is a system situated within and a part of an environment that senses that environment and acts on it, over time, in pursuit of its own agenda and so as to effect what it senses in the future."\cite{franklin1996agent}
+\end{quote}
+
+\subsection{Design of an autonomous agent}
+\label{sec:BackgroundAgentDesign}
+Wang et al.\cite{wang2024survey} proposes a unified framework for the discussing LLM utilization in the design an autonomous agent, by splitting the design into four \textit{'modules'}:
+\begin{itemize}
+    \item \textbf{Profile} module references the notion of influencing the LLM behavior of the agent through assigning a specific persona, role or personality. 
+    \item \textbf{Memory} module looks at the agents ability to store, leverage and operate on the information collected from the environment, where it is proposed to differentiate between a \textit{unified} memory-structure modeling the capabilities of a the human short-term memory and a \textit{hybrid} memory-structure modeling both human short-term and long-term memory as well as different formats the information can take. The \textit{operation} granted to the memory model is how information from the environment is written into and read from its memory structure.
+    \item \textbf{Planning} module illuminates the agent emulating the human capability of breaking complex tasks into manageable steps, creating a plan for how to execute the task at hand. 
+    \item \textbf{Action} module handles the translation of internal decisions of the agent into tangible outcomes. The collections of actions the agent can take is referred to as the \textit{action space}, and each action is described through its \textit{goal}, \textit{impact} and \textit{production}, where the latter is describes how the action is executed.
+\end{itemize}
+
+\subsection{GitHub hosted runners}
+\label{sec:githubRunner}
+\textcolor{red}{Note: husk at skriv om connection limitation}
+When executing a job in a GitHub Actions workflow, GitHub provides a hosted virtual machines for the execution of said job; these are generally know as GitHub hosted runners (This paper will use the term GitHub runner). These runners is restricted to given specifications, depending on whether the repository is public or private. If we look at a Linux runner, the specifications is as follows:
+\begin{itemize}
+    \item \textbf{Public repository:} has a 4 CPU processor, 16GB RAM and 14GB SSD storage. The usage of runners on a public repository under these specifactions is free and unlimited.
+    \item \textbf{Private repository:} has a 2 CPU processor, 7GB RAM, and 14GB SSD storage. The free usage of runners on a private repository is dependent on the given GitHub account.
+\end{itemize}
+
+Public repositories has free and unlimited use of Standard Runners, which is restricted to the following specifications: 4 CPU processor, 16GB RAM, 14GB SSD storage.
