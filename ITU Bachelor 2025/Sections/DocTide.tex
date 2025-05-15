@@ -21,7 +21,7 @@ jobs:
 When the workflow is triggered, \Cref{fig:flow_doctide} shows how DocTide is run on a GitHub Runner with privilege to access the callers repository. Here DocTide finds the newly modified functions, added by the commit which triggered the DocTide workflow, and generates function level documentation for those functions. It commits the updated functions to an "update function level comments" branch and pushes it to the repository, creating a Pull Request for the developer of the code to accept or modify.
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\linewidth]{Figures/doctide_flow.png}
+\includegraphics[width=1\linewidth]{Figures/doctide_flow.png}
 \caption{\textcolor{red}{Opdater denne}The use flow of DocTide}
 \label{fig:flow_doctide}
 \end{figure}
@@ -32,7 +32,7 @@ The core functionality of DocTide comes from the python script doctide.py. As sh
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\linewidth]{Figures/component_diagram.png}
+\includegraphics[width=1\linewidth]{Figures/component_diagram.png}
 \caption{doctide.py dependencies and component structure}
 \label{fig:components}
 \end{figure}
