@@ -49,9 +49,9 @@ We will here describe which next step for DocTide we would be interested to inve
 \subsubsection*{Gaining more context}
 As mentioned in \Cref{sec:DiscussionQ2}, increasing DocTides context of the source code and the context in which the code is would maybe be a factor to increasing its level of similarity. This could simply be done in giving it the code of the whole file in which the function is situated in, or make an dependency analysis to give give more knowledge of the surrounding context.
 \subsubsection*{Let the agent validate its response}
-As discussed in \cref{sec:DiscussionQ3} it is hypothesized that implementing a feedback mechanism to enable re-attempting the generation of documentation after failing on format in the first attempt, could lead to an increase in the \textit{'succes rate'} of the 
+As discussed in \cref{sec:DiscussionQ3} it is hypothesized that implementing a feedback mechanism to enable re-attempting the generation of documentation after failing on format in the first attempt, could lead to an increase in the \textit{'succes rate'} of the format reliability.
 
-Following \cite{wang2024survey} one consideration could be to implement \textit{model feedback} where internally an LLM is used instead of DocTides static format check, to decide whether the generated documentation follows correct format and to handling \textit{re-prompting} in the case that it does not.
+It is therefore proposed that future work implement \textit{model feedback} as described by Wang et al.\cite{wang2024survey} where internally an LLM is used to decide whether the generated documentation follows correct format and to perform \textit{re-prompting} in the case that it does not.
 
 \subsubsection*{Enable DocTide to evolve based on feedback from Pull Requests}
 As developers will be prompted with a pull request, containing DocTides generated function level documentation, they will either accept it, modify it or reject it. A future work could be to find a way to harvest this valuable feedback, to enable DocTide to learn and evolve by saving its learning to a persistent memory structure.
