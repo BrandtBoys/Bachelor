@@ -1,0 +1,20 @@
+\section{Introduction}
+\label{sec:intro}
+The notion of automation is not new in the realm of software development. As part of the ever growing expectancy to the productivity when developing bigger and more complex system, the need for automation of processes in the software life-cycle was already seen as the necessary step to take back in 1985 where G. F. Hoffnagle and W. E. Beregi stated:
+\begin{quote}
+    ``Demand for reliable software systems is stressing software production capability, and automation is seen as a practical approach to increasing productivity and quality"\cite{5387726}
+\end{quote}
+
+Similar it is well established that software documentation is a indispensable necessity in the \textit{software development life cycle}, acting as a constant vessel of quality. The area of the life cycle that benefits from documentation varies depending on the type of the documentation at hand. Aghajani et al.\cite{aghajani2020software} identifies source code documentation as of significant importance for especially \textit{software debugging} and \textit{program comprehension}.
+
+However, a survey conducted by Aghajani et al.\cite{aghajani2020software} shows that \textit{missing documentations for a new feature or component}, \textit{outdated or obsolete references}, \textit{code-documentation inconsistency} is issues which is rated high in importance and is frequently encountered by developers. When participants was asked about the topic of \textit{process and tools} the \textit{lack of time to write documentation} was equally stressed as an issue, along with a common request of \textit{automated generation of documentation}.
+\\ \\
+With the recent advancements of Large Language models (LLM), which have proven highly capable in creating natural language given specific context, the curiosity naturally arises on how such technological advancements could be used to mitigate some of the issues relates to current software documentation practices. Automatic documentation generation is researched as one possible mitigation, with Rai et al. identifying \textit{method level} source code documentation as an specific area of interest in contemporary research\cite{rai2022review}.
+\\ \\
+As a commonly used practice for ensuring a unified quality in the code base, by automating test and build processes, Continuous Integration (CI) serves as an interesting environment to possibly facilitate the automation of the task of generating documentation, utilizing the technology of LLM as just mentioned.
+When looking at systems to manage CI the landscape is varied, yet in a survey conducted by JetBrains on 26.000 developers, GitHub Actions comes out on top as the most used system by private developers, and the second overall.\footnote{https://www.jetbrains.com/lp/devecosystem-2023/team-tools/}
+\\ \\
+This paper contributes by investigating the possibility of extending the current CI practices with automatic generation of method-level documentation. This is done by developing a prototype of an LLM-based autonomous agent under the restrictions of said agent running in GitHub Actions. A proposed framework for evaluating said agent in a environment simulating a live GitHub repository is proposed. Finally the implications on the design of the agent, brought by the GitHub Runner is discussed, and future directions is presented.
+
+\subsection{Research question}
+\researchQuestion

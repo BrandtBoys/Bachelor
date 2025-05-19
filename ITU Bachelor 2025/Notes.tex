@@ -1,0 +1,31 @@
+\subsection{Motivation for test-script}
+During the development of our system, we aimed to collect data to better understand the requirements and challenges involved in enabling a language model-based agent to perform as expected. Specifically, we investigated how much guidance and context the agent needed to correctly interpret the diff of a Git commit, which language models performed best for this task, and what infrastructure or setup supported seamless integration with a live GitHub repository. By examining these aspects, we intended to evaluate how easily large language models could be integrated into real-world development workflows, such as the one we had envisioned.
+
+How do we know that DocTide does this (requirements):
+\begin{itemize}
+    \item Semantic Accuracy
+    
+    Does DocTide understand and reflect the purpose of the code correctly?
+
+    \textbf{Method}: Compare LLM-generated documentation to manual documentation
+    
+    \item GitHub Workflow
+
+    What are the challenges in developing and integrating an autonomous agent into GitHub Workflows?
+
+    \textbf{Method}: Design of DocTide
+    
+    \item 
+
+    Does DocTide create comments in correct format, or does it "inject" intrusive changes that could break the code base.
+    
+    \textbf{Method}: Keep track of how many successful comments vs aborted attempts from agent.
+    \item "sensible", "non-intrusive" (Intrusiveness / Unwanted Additions)
+
+    Does the LLM over-document or inject unnecessary info that clutters the code?
+
+    \textbf{Method}: Manual code reviews, developer feedback on noise vs. signal.
+    \\
+    Spike: look into related work on identifying parts of code that qualifies for comments, and compare how well DocTide identifies these. Too much, or too little?
+    \item (Working environment: Manifest - setting of comment style)
+\end{itemize}
